@@ -25,6 +25,7 @@ model User {
   areaRecommendations AreaRecommendation[]
   viewings            Viewing[]
   dismissedAreas      DismissedArea[]
+  areaNotes           AreaNote[]
 
   @@map("users")
   @@schema("housing")
@@ -177,5 +178,21 @@ model DismissedArea {
 
   @@unique([userId, areaName])
   @@map("dismissed_areas")
+  @@schema("housing")
+}
+
+model AreaNote {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  areaName  String   @map("area_name")
+  liked     String?
+  disliked  String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, areaName])
+  @@map("area_notes")
   @@schema("housing")
 }

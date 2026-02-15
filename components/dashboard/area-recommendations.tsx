@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import {
     RefreshCw,
     MapPin,
@@ -15,6 +16,11 @@ import {
     ThumbsDown,
     Undo2,
     X,
+    MessageSquare,
+    ThumbsUp,
+    ChevronDown,
+    ChevronUp,
+    Save,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -37,12 +43,21 @@ interface DismissedAreaData {
     user: { id: string; displayName: string };
 }
 
+interface AreaNoteData {
+    id: string;
+    areaName: string;
+    liked: string | null;
+    disliked: string | null;
+    user: { id: string; displayName: string };
+}
+
 interface AreaRecommendationsProps {
     recommendations: AreaRec[];
     users: { id: string; username: string; displayName: string }[];
     staleness: Record<string, boolean>;
     currentUserId: string;
     dismissedAreas: DismissedAreaData[];
+    areaNotes: AreaNoteData[];
 }
 
 function scoreBadgeColor(score: number): string {
@@ -59,15 +74,40 @@ function AreaCard({
     rec,
     score,
     onDismiss,
+    notes,
+    onSaveNotes,
 }: {
     rec: AreaRec;
     score?: number;
     onDismiss?: (areaName: string) => void;
+    notes?: { liked: string | null; disliked: string | null };
+    onSaveNotes?: (
+        areaName: string,
+        liked: string,
+        disliked: string,
+    ) => Promise<void>;
 }) {
     const displayScore = score ?? rec.matchScore;
     const highlights = Array.isArray(rec.keyHighlights)
         ? (rec.keyHighlights as string[])
         : [];
+
+    const [notesOpen, setNotesOpen] = useState(false);
+    const [liked, setLiked] = useState(notes?.liked || "");
+    const [disliked, setDisliked] = useState(notes?.disliked || "");
+    const [saving, setSaving] = useState(false);
+
+    const hasNotes = !!(notes?.liked || notes?.disliked);
+
+    async function handleSaveNotes() {
+        if (!onSaveNotes) return;
+        setSaving(true);
+        try {
+            await onSaveNotes(rec.areaName, liked, disliked);
+        } finally {
+            setSaving(false);
+        }
+    }
 
     return (
         <Card className="h-full flex flex-col">
@@ -78,20 +118,31 @@ function AreaCard({
                     >
                         {displayScore.toFixed(1)}
                     </Badge>
-                    {onDismiss && (
+                    <div className="flex items-center gap-1">
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onDismiss(rec.areaName);
-                            }}
-                            title="Not interested in this area"
+                            className={`h-7 w-7 shrink-0 ${hasNotes ? "text-primary" : "text-muted-foreground"} hover:text-primary`}
+                            onClick={() => setNotesOpen(!notesOpen)}
+                            title="Add notes about this area"
                         >
-                            <ThumbsDown className="h-3.5 w-3.5" />
+                            <MessageSquare className="h-3.5 w-3.5" />
                         </Button>
-                    )}
+                        {onDismiss && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDismiss(rec.areaName);
+                                }}
+                                title="Not interested in this area"
+                            >
+                                <ThumbsDown className="h-3.5 w-3.5" />
+                            </Button>
+                        )}
+                    </div>
                 </div>
                 <CardTitle className="text-base flex items-center gap-1.5 mt-1">
                     <MapPin className="h-4 w-4 shrink-0 text-primary" />
@@ -104,6 +155,68 @@ function AreaCard({
                 )}
             </CardHeader>
             <CardContent className="space-y-3 flex-1 flex flex-col pt-0">
+                {/* Notes section */}
+                {notesOpen && (
+                    <div className="space-y-2 rounded-lg border bg-muted/30 p-3">
+                        <div className="space-y-1.5">
+                            <label className="flex items-center gap-1.5 text-xs font-medium text-green-700 dark:text-green-400">
+                                <ThumbsUp className="h-3 w-3" />
+                                What we liked
+                            </label>
+                            <Textarea
+                                value={liked}
+                                onChange={(e) => setLiked(e.target.value)}
+                                placeholder="e.g. Great parks, walkable, nice coffee shops..."
+                                className="min-h-[60px] text-xs resize-none"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="flex items-center gap-1.5 text-xs font-medium text-red-700 dark:text-red-400">
+                                <ThumbsDown className="h-3 w-3" />
+                                What we didn&apos;t like
+                            </label>
+                            <Textarea
+                                value={disliked}
+                                onChange={(e) => setDisliked(e.target.value)}
+                                placeholder="e.g. Too far from transit, noisy streets..."
+                                className="min-h-[60px] text-xs resize-none"
+                            />
+                        </div>
+                        <Button
+                            size="sm"
+                            className="w-full"
+                            onClick={handleSaveNotes}
+                            disabled={saving}
+                        >
+                            <Save className="h-3.5 w-3.5 mr-1.5" />
+                            {saving ? "Saving..." : "Save Notes"}
+                        </Button>
+                    </div>
+                )}
+
+                {/* Compact note preview when closed */}
+                {!notesOpen && hasNotes && (
+                    <button
+                        onClick={() => setNotesOpen(true)}
+                        className="text-left rounded-md border border-dashed bg-muted/20 px-2.5 py-1.5 text-xs text-muted-foreground hover:bg-muted/40 transition-colors"
+                    >
+                        <span className="font-medium">Notes:</span>{" "}
+                        {notes?.liked && (
+                            <span className="text-green-700 dark:text-green-400">
+                                +{notes.liked.slice(0, 40)}
+                                {notes.liked.length > 40 ? "..." : ""}
+                            </span>
+                        )}
+                        {notes?.liked && notes?.disliked && " / "}
+                        {notes?.disliked && (
+                            <span className="text-red-700 dark:text-red-400">
+                                -{notes.disliked.slice(0, 40)}
+                                {notes.disliked.length > 40 ? "..." : ""}
+                            </span>
+                        )}
+                    </button>
+                )}
+
                 <p className="text-sm text-muted-foreground line-clamp-3">
                     {rec.reasoning}
                 </p>
@@ -144,10 +257,12 @@ export function AreaRecommendations({
     staleness,
     currentUserId,
     dismissedAreas: initialDismissed,
+    areaNotes: initialNotes,
 }: AreaRecommendationsProps) {
     const [refreshing, setRefreshing] = useState(false);
     const [dismissed, setDismissed] =
         useState<DismissedAreaData[]>(initialDismissed);
+    const [notes, setNotes] = useState<AreaNoteData[]>(initialNotes);
 
     // Set of area names dismissed by ANY user
     const dismissedNames = new Set(dismissed.map((d) => d.areaName));
@@ -254,6 +369,43 @@ export function AreaRecommendations({
         }
     }
 
+    const handleSaveNotes = useCallback(
+        async (areaName: string, liked: string, disliked: string) => {
+            try {
+                const res = await fetch("/api/area-notes", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ areaName, liked, disliked }),
+                });
+                if (!res.ok) throw new Error();
+                const { areaNote } = await res.json();
+                setNotes((prev) => {
+                    const filtered = prev.filter(
+                        (n) =>
+                            !(
+                                n.areaName === areaName &&
+                                n.user.id === currentUserId
+                            ),
+                    );
+                    return [...filtered, areaNote];
+                });
+                toast.success(`Notes saved for ${areaName}`);
+            } catch {
+                toast.error("Failed to save notes");
+            }
+        },
+        [currentUserId],
+    );
+
+    function getNotesForArea(areaName: string) {
+        const myNote = notes.find(
+            (n) => n.areaName === areaName && n.user.id === currentUserId,
+        );
+        return myNote
+            ? { liked: myNote.liked, disliked: myNote.disliked }
+            : undefined;
+    }
+
     const hasAnyRecs = recommendations.length > 0;
     const currentUserIsStale = staleness[currentUserId];
 
@@ -321,6 +473,8 @@ export function AreaRecommendations({
                                 rec={rec}
                                 score={avgScore}
                                 onDismiss={handleDismiss}
+                                notes={getNotesForArea(rec.areaName)}
+                                onSaveNotes={handleSaveNotes}
                             />
                         ))}
                     </div>
@@ -362,6 +516,12 @@ export function AreaRecommendations({
                                                     key={rec.id}
                                                     rec={rec}
                                                     onDismiss={handleDismiss}
+                                                    notes={getNotesForArea(
+                                                        rec.areaName,
+                                                    )}
+                                                    onSaveNotes={
+                                                        handleSaveNotes
+                                                    }
                                                 />
                                             ),
                                         )}
@@ -408,6 +568,8 @@ export function AreaRecommendations({
                                         key={rec.id}
                                         rec={rec}
                                         onDismiss={handleDismiss}
+                                        notes={getNotesForArea(rec.areaName)}
+                                        onSaveNotes={handleSaveNotes}
                                     />
                                 ))}
                             </div>

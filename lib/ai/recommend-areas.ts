@@ -30,10 +30,18 @@ export interface AreaRecommendationResult {
     vibeDescription: string;
 }
 
+interface AreaNoteFeedback {
+    areaName: string;
+    userName: string;
+    liked: string | null;
+    disliked: string | null;
+}
+
 async function recommendAreas(
     preferences: UserPreferences,
     userName: string,
     excludedAreas: string[] = [],
+    areaNotes: AreaNoteFeedback[] = [],
 ): Promise<AreaRecommendationResult[]> {
     const priorities: string[] = [];
 
@@ -140,7 +148,23 @@ ${excludedAreas.map((a) => `- ${a}`).join("\n")}
 
 `
         : ""
-}INSTRUCTIONS:
+}${
+        areaNotes.length > 0
+            ? `USER FEEDBACK ON AREAS (from visiting/researching — use this to refine recommendations):
+${areaNotes
+    .map((n) => {
+        const parts = [`- ${n.areaName} (feedback from ${n.userName}):`];
+        if (n.liked) parts.push(`  Liked: ${n.liked}`);
+        if (n.disliked) parts.push(`  Disliked: ${n.disliked}`);
+        return parts.join("\n");
+    })
+    .join("\n")}
+
+Use this feedback to adjust your recommendations. If users liked certain qualities in an area, prioritize similar qualities in other recommendations. If they disliked aspects, deprioritize areas with similar issues. This real-world feedback should carry significant weight.
+
+`
+            : ""
+    }INSTRUCTIONS:
 1. Recommend exactly 6 neighbourhoods ranked by how well they match ${userName}'s priorities
 2. Be SPECIFIC and HONEST — if a neighbourhood is noisy, say so. If transit is poor, say so.
 3. Match budget to realistic rental prices for the bedroom count they want
@@ -243,10 +267,29 @@ export async function generateRecommendations(userId: string): Promise<void> {
     });
     const excludedAreas = dismissedAreas.map((d) => d.areaName);
 
+    // Fetch area notes from all users to inform recommendations
+    const allAreaNotes = await prisma.areaNote.findMany({
+        where: {
+            OR: [{ liked: { not: null } }, { disliked: { not: null } }],
+        },
+        include: {
+            user: { select: { displayName: true } },
+        },
+    });
+    const areaNotes: AreaNoteFeedback[] = allAreaNotes
+        .filter((n) => n.liked || n.disliked)
+        .map((n) => ({
+            areaName: n.areaName,
+            userName: n.user.displayName,
+            liked: n.liked,
+            disliked: n.disliked,
+        }));
+
     const areas = await recommendAreas(
         prefsForAI,
         user.displayName,
         excludedAreas,
+        areaNotes,
     );
 
     // Replace old recommendations with new ones

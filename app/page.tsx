@@ -89,6 +89,14 @@ export default async function HomePage() {
         orderBy: { createdAt: "desc" },
     });
 
+    // Fetch area notes
+    const areaNotes = await prisma.areaNote.findMany({
+        include: {
+            user: { select: { id: true, username: true, displayName: true } },
+        },
+        orderBy: { updatedAt: "desc" },
+    });
+
     return (
         <AppShell
             user={{
@@ -104,6 +112,7 @@ export default async function HomePage() {
                 staleness={staleness}
                 currentUserId={session.userId}
                 dismissedAreas={dismissedAreas}
+                areaNotes={areaNotes}
             />
         </AppShell>
     );

@@ -46,6 +46,14 @@ interface DismissedAreaData {
     user: { id: string; displayName: string };
 }
 
+interface AreaNoteData {
+    id: string;
+    areaName: string;
+    liked: string | null;
+    disliked: string | null;
+    user: { id: string; displayName: string };
+}
+
 interface DashboardContentProps {
     listings: Listing[];
     users: { id: string; username: string; displayName: string }[];
@@ -53,6 +61,7 @@ interface DashboardContentProps {
     staleness: Record<string, boolean>;
     currentUserId: string;
     dismissedAreas: DismissedAreaData[];
+    areaNotes: AreaNoteData[];
 }
 
 function getEffectiveScore(score: Score): number | null {
@@ -73,6 +82,7 @@ export function DashboardContent({
     staleness,
     currentUserId,
     dismissedAreas,
+    areaNotes,
 }: DashboardContentProps) {
     const activeListings = listings.filter(
         (l) => l.status === "ACTIVE" || l.status === "FAVORITE",
@@ -210,6 +220,7 @@ export function DashboardContent({
                 staleness={staleness}
                 currentUserId={currentUserId}
                 dismissedAreas={dismissedAreas}
+                areaNotes={areaNotes}
             />
 
             {/* Comparison table */}
