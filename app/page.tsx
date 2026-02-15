@@ -81,6 +81,14 @@ export default async function HomePage() {
             !latestRec || latestRec.preferencesHash !== currentHash;
     }
 
+    // Fetch dismissed areas
+    const dismissedAreas = await prisma.dismissedArea.findMany({
+        include: {
+            user: { select: { id: true, username: true, displayName: true } },
+        },
+        orderBy: { createdAt: "desc" },
+    });
+
     return (
         <AppShell
             user={{
@@ -95,6 +103,7 @@ export default async function HomePage() {
                 recommendations={areaRecommendations}
                 staleness={staleness}
                 currentUserId={session.userId}
+                dismissedAreas={dismissedAreas}
             />
         </AppShell>
     );

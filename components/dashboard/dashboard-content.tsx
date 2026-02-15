@@ -39,12 +39,20 @@ interface AreaRec {
     user: { id: string; displayName: string };
 }
 
+interface DismissedAreaData {
+    id: string;
+    areaName: string;
+    reason: string | null;
+    user: { id: string; displayName: string };
+}
+
 interface DashboardContentProps {
     listings: Listing[];
     users: { id: string; username: string; displayName: string }[];
     recommendations: AreaRec[];
     staleness: Record<string, boolean>;
     currentUserId: string;
+    dismissedAreas: DismissedAreaData[];
 }
 
 function getEffectiveScore(score: Score): number | null {
@@ -64,6 +72,7 @@ export function DashboardContent({
     recommendations,
     staleness,
     currentUserId,
+    dismissedAreas,
 }: DashboardContentProps) {
     const activeListings = listings.filter(
         (l) => l.status === "ACTIVE" || l.status === "FAVORITE",
@@ -200,6 +209,7 @@ export function DashboardContent({
                 users={users}
                 staleness={staleness}
                 currentUserId={currentUserId}
+                dismissedAreas={dismissedAreas}
             />
 
             {/* Comparison table */}

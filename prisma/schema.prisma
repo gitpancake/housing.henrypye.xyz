@@ -24,6 +24,7 @@ model User {
   listingScores       ListingScore[]
   areaRecommendations AreaRecommendation[]
   viewings            Viewing[]
+  dismissedAreas      DismissedArea[]
 
   @@map("users")
   @@schema("housing")
@@ -162,5 +163,19 @@ model Viewing {
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("viewings")
+  @@schema("housing")
+}
+
+model DismissedArea {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  areaName  String   @map("area_name")
+  reason    String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, areaName])
+  @@map("dismissed_areas")
   @@schema("housing")
 }
