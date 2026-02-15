@@ -1,0 +1,116 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
+  schemas   = ["housing"]
+}
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  passwordHash String   @map("password_hash")
+  displayName  String   @map("display_name")
+  isAdmin      Boolean  @default(false) @map("is_admin")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  preferences   UserPreferences?
+  listings      Listing[]
+  listingScores ListingScore[]
+
+  @@map("users")
+  @@schema("housing")
+}
+
+model UserPreferences {
+  id                 String   @id @default(uuid())
+  userId             String   @unique @map("user_id")
+  naturalLight       Int      @default(5) @map("natural_light")
+  bedroomsMin        Int      @default(1) @map("bedrooms_min")
+  bedroomsMax        Int      @default(2) @map("bedrooms_max")
+  outdoorsAccess     Int      @default(5) @map("outdoors_access")
+  publicTransport    Int      @default(5) @map("public_transport")
+  budgetMin          Int      @default(1500) @map("budget_min")
+  budgetMax          Int      @default(2500) @map("budget_max")
+  petFriendly        Boolean  @default(false) @map("pet_friendly")
+  moveInDateStart    DateTime? @map("move_in_date_start")
+  moveInDateEnd      DateTime? @map("move_in_date_end")
+  laundryInUnit      Int      @default(5) @map("laundry_in_unit")
+  parking            Int      @default(5)
+  quietNeighbourhood Int      @default(5) @map("quiet_neighbourhood")
+  modernFinishes     Int      @default(5) @map("modern_finishes")
+  storageSpace       Int      @default(5) @map("storage_space")
+  gymAmenities       Int      @default(5) @map("gym_amenities")
+  customDesires      Json     @default("[]") @map("custom_desires")
+  onboardingComplete Boolean  @default(false) @map("onboarding_complete")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
+  @@schema("housing")
+}
+
+enum ListingStatus {
+  ACTIVE
+  ARCHIVED
+  REJECTED
+  FAVORITE
+
+  @@map("listing_status")
+  @@schema("housing")
+}
+
+model Listing {
+  id             String        @id @default(uuid())
+  addedBy        String        @map("added_by")
+  title          String
+  description    String        @default("")
+  url            String        @default("")
+  address        String        @default("")
+  latitude       Float?
+  longitude      Float?
+  price          Int?
+  bedrooms       Int?
+  bathrooms      Int?
+  petFriendly    Boolean?      @map("pet_friendly")
+  squareFeet     Int?          @map("square_feet")
+  photos         Json          @default("[]")
+  scrapedContent String?       @map("scraped_content")
+  status         ListingStatus @default(ACTIVE)
+  notes          String?
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  addedByUser User           @relation(fields: [addedBy], references: [id])
+  scores      ListingScore[]
+
+  @@map("listings")
+  @@schema("housing")
+}
+
+model ListingScore {
+  id                  String   @id @default(uuid())
+  listingId           String   @map("listing_id")
+  userId              String   @map("user_id")
+  aiOverallScore      Float?   @map("ai_overall_score")
+  aiBreakdown         Json?    @map("ai_breakdown")
+  aiSummary           String?  @map("ai_summary")
+  manualOverrideScore Float?   @map("manual_override_score")
+  evaluatedAt         DateTime? @map("evaluated_at")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([listingId, userId])
+  @@map("listing_scores")
+  @@schema("housing")
+}
