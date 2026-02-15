@@ -19,9 +19,10 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  preferences   UserPreferences?
-  listings      Listing[]
-  listingScores ListingScore[]
+  preferences         UserPreferences?
+  listings            Listing[]
+  listingScores       ListingScore[]
+  areaRecommendations AreaRecommendation[]
 
   @@map("users")
   @@schema("housing")
@@ -112,5 +113,26 @@ model ListingScore {
 
   @@unique([listingId, userId])
   @@map("listing_scores")
+  @@schema("housing")
+}
+
+model AreaRecommendation {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  areaName        String   @map("area_name")
+  matchScore      Float    @map("match_score")
+  reasoning       String
+  keyHighlights   Json     @map("key_highlights")
+  averageRent     String?  @map("average_rent")
+  transitScore    String?  @map("transit_score")
+  vibeDescription String?  @map("vibe_description")
+  preferencesHash String   @map("preferences_hash")
+  generatedAt     DateTime @map("generated_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("area_recommendations")
   @@schema("housing")
 }

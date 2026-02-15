@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { computePreferencesHash } from "@/lib/ai/preferences-hash";
 import { AppShell } from "@/components/layout/app-shell";
 import { DashboardContent } from "@/components/dashboard/dashboard-content";
 
@@ -36,6 +37,50 @@ export default async function HomePage() {
         select: { id: true, username: true, displayName: true },
     });
 
+    // Fetch area recommendations
+    const areaRecommendations = await prisma.areaRecommendation.findMany({
+        include: {
+            user: { select: { id: true, username: true, displayName: true } },
+        },
+        orderBy: { matchScore: "desc" },
+    });
+
+    // Compute staleness per user
+    const usersWithPrefs = await prisma.user.findMany({
+        include: { preferences: true },
+        where: { preferences: { onboardingComplete: true } },
+    });
+
+    const staleness: Record<string, boolean> = {};
+    for (const u of usersWithPrefs) {
+        if (!u.preferences) continue;
+        const currentHash = computePreferencesHash({
+            naturalLight: u.preferences.naturalLight,
+            bedroomsMin: u.preferences.bedroomsMin,
+            bedroomsMax: u.preferences.bedroomsMax,
+            outdoorsAccess: u.preferences.outdoorsAccess,
+            publicTransport: u.preferences.publicTransport,
+            budgetMin: u.preferences.budgetMin,
+            budgetMax: u.preferences.budgetMax,
+            petFriendly: u.preferences.petFriendly,
+            laundryInUnit: u.preferences.laundryInUnit,
+            parking: u.preferences.parking,
+            quietNeighbourhood: u.preferences.quietNeighbourhood,
+            modernFinishes: u.preferences.modernFinishes,
+            storageSpace: u.preferences.storageSpace,
+            gymAmenities: u.preferences.gymAmenities,
+            customDesires:
+                (u.preferences.customDesires as {
+                    label: string;
+                    enabled: boolean;
+                }[]) || [],
+        });
+
+        const latestRec = areaRecommendations.find((r) => r.user.id === u.id);
+        staleness[u.id] =
+            !latestRec || latestRec.preferencesHash !== currentHash;
+    }
+
     return (
         <AppShell
             user={{
@@ -44,7 +89,13 @@ export default async function HomePage() {
                 isAdmin: user.isAdmin,
             }}
         >
-            <DashboardContent listings={listings} users={allUsers} />
+            <DashboardContent
+                listings={listings}
+                users={allUsers}
+                recommendations={areaRecommendations}
+                staleness={staleness}
+                currentUserId={session.userId}
+            />
         </AppShell>
     );
 }

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, TrendingUp, Home, Star, ArrowRight } from "lucide-react";
+import { AreaRecommendations } from "./area-recommendations";
 
 interface Score {
     id: string;
@@ -26,9 +27,24 @@ interface Listing {
     createdAt: string | Date;
 }
 
+interface AreaRec {
+    id: string;
+    areaName: string;
+    matchScore: number;
+    reasoning: string;
+    keyHighlights: string[] | unknown;
+    averageRent: string | null;
+    transitScore: string | null;
+    vibeDescription: string | null;
+    user: { id: string; displayName: string };
+}
+
 interface DashboardContentProps {
     listings: Listing[];
     users: { id: string; username: string; displayName: string }[];
+    recommendations: AreaRec[];
+    staleness: Record<string, boolean>;
+    currentUserId: string;
 }
 
 function getEffectiveScore(score: Score): number | null {
@@ -42,7 +58,13 @@ function scoreColor(score: number): string {
     return "text-red-600 dark:text-red-400";
 }
 
-export function DashboardContent({ listings, users }: DashboardContentProps) {
+export function DashboardContent({
+    listings,
+    users,
+    recommendations,
+    staleness,
+    currentUserId,
+}: DashboardContentProps) {
     const activeListings = listings.filter(
         (l) => l.status === "ACTIVE" || l.status === "FAVORITE",
     );
@@ -171,6 +193,14 @@ export function DashboardContent({ listings, users }: DashboardContentProps) {
                     );
                 })}
             </div>
+
+            {/* Area Recommendations */}
+            <AreaRecommendations
+                recommendations={recommendations}
+                users={users}
+                staleness={staleness}
+                currentUserId={currentUserId}
+            />
 
             {/* Comparison table */}
             {scoredListings.length > 0 && (
