@@ -41,6 +41,7 @@ model UserPreferences {
   publicTransport    Boolean  @default(false) @map("public_transport")
   budgetMin          Int      @default(1500) @map("budget_min")
   budgetMax          Int      @default(2500) @map("budget_max")
+  annualSalary       Int?     @map("annual_salary")
   petFriendly        Boolean  @default(false) @map("pet_friendly")
   moveInDateStart    DateTime? @map("move_in_date_start")
   moveInDateEnd      DateTime? @map("move_in_date_end")
