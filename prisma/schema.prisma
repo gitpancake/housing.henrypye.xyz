@@ -23,6 +23,7 @@ model User {
   listings            Listing[]
   listingScores       ListingScore[]
   areaRecommendations AreaRecommendation[]
+  viewings            Viewing[]
 
   @@map("users")
   @@schema("housing")
@@ -91,6 +92,7 @@ model Listing {
 
   addedByUser User           @relation(fields: [addedBy], references: [id])
   scores      ListingScore[]
+  viewings    Viewing[]
 
   @@map("listings")
   @@schema("housing")
@@ -134,5 +136,31 @@ model AreaRecommendation {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("area_recommendations")
+  @@schema("housing")
+}
+
+enum ViewingStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+
+  @@map("viewing_status")
+  @@schema("housing")
+}
+
+model Viewing {
+  id          String        @id @default(uuid())
+  listingId   String        @map("listing_id")
+  userId      String        @map("user_id")
+  scheduledAt DateTime      @map("scheduled_at")
+  notes       String?
+  status      ViewingStatus @default(SCHEDULED)
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("viewings")
   @@schema("housing")
 }

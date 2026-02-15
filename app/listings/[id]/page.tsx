@@ -36,8 +36,12 @@ import {
     Star,
     Pencil,
     Trash2,
+    CalendarDays,
+    Clock,
+    Plus,
 } from "lucide-react";
 import Link from "next/link";
+import { format } from "date-fns";
 import dynamic from "next/dynamic";
 import { PageWrapper } from "@/components/layout/page-wrapper";
 
@@ -64,6 +68,14 @@ interface Score {
     aiSummary: string | null;
     manualOverrideScore: number | null;
     user: { id: string; username: string; displayName: string };
+}
+
+interface ViewingItem {
+    id: string;
+    scheduledAt: string;
+    notes: string | null;
+    status: string;
+    user: { id: string; displayName: string };
 }
 
 interface Listing {
@@ -108,6 +120,7 @@ export default function ListingDetailPage() {
     const [loading, setLoading] = useState(true);
     const [evaluating, setEvaluating] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [viewings, setViewings] = useState<ViewingItem[]>([]);
 
     const id = params.id as string;
 
@@ -118,8 +131,22 @@ export default function ListingDetailPage() {
             .finally(() => setLoading(false));
     }
 
+    function fetchViewings() {
+        fetch("/api/viewings")
+            .then((res) => res.json())
+            .then((data) => {
+                const all = data.viewings || [];
+                setViewings(
+                    all.filter(
+                        (v: { listingId: string }) => v.listingId === id,
+                    ),
+                );
+            });
+    }
+
     useEffect(() => {
         fetchListing();
+        fetchViewings();
     }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
     async function handleEvaluate() {
@@ -513,6 +540,86 @@ export default function ListingDetailPage() {
                                             </div>
                                         );
                                     })}
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    {/* Viewings */}
+                    <Card>
+                        <CardHeader>
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="text-lg flex items-center gap-2">
+                                    <CalendarDays className="h-4 w-4" />
+                                    Viewings
+                                </CardTitle>
+                                <Link href={`/calendar`}>
+                                    <Button variant="outline" size="sm">
+                                        <Plus className="h-4 w-4 mr-2" />
+                                        Schedule
+                                    </Button>
+                                </Link>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            {viewings.length === 0 ? (
+                                <p className="text-sm text-muted-foreground text-center py-4">
+                                    No viewings scheduled for this listing.
+                                </p>
+                            ) : (
+                                <div className="space-y-2">
+                                    {viewings
+                                        .sort(
+                                            (a, b) =>
+                                                new Date(
+                                                    a.scheduledAt,
+                                                ).getTime() -
+                                                new Date(
+                                                    b.scheduledAt,
+                                                ).getTime(),
+                                        )
+                                        .map((v) => (
+                                            <div
+                                                key={v.id}
+                                                className={`flex items-center justify-between rounded-lg border p-3 ${
+                                                    v.status === "CANCELLED"
+                                                        ? "opacity-50"
+                                                        : ""
+                                                }`}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <Clock className="h-4 w-4 text-muted-foreground" />
+                                                    <div>
+                                                        <p className="text-sm font-medium">
+                                                            {format(
+                                                                new Date(
+                                                                    v.scheduledAt,
+                                                                ),
+                                                                "EEE, MMM d 'at' h:mm a",
+                                                            )}
+                                                        </p>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            Added by{" "}
+                                                            {v.user.displayName}
+                                                            {v.notes &&
+                                                                ` — ${v.notes}`}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                {v.status !== "SCHEDULED" && (
+                                                    <Badge
+                                                        variant={
+                                                            v.status ===
+                                                            "COMPLETED"
+                                                                ? "secondary"
+                                                                : "destructive"
+                                                        }
+                                                    >
+                                                        {v.status}
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                        ))}
                                 </div>
                             )}
                         </CardContent>
