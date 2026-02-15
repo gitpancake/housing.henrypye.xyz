@@ -23,7 +23,9 @@ import {
     Ruler,
     RefreshCw,
     Star,
+    Pencil,
 } from "lucide-react";
+import Link from "next/link";
 import dynamic from "next/dynamic";
 import { PageWrapper } from "@/components/layout/page-wrapper";
 
@@ -159,14 +161,18 @@ export default function ListingDetailPage() {
     return (
         <PageWrapper>
             <div className="mx-auto max-w-4xl px-4 py-8">
-                <Button
-                    variant="ghost"
-                    onClick={() => router.back()}
-                    className="mb-4"
-                >
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Back
-                </Button>
+                <div className="flex items-center justify-between mb-4">
+                    <Button variant="ghost" onClick={() => router.back()}>
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        Back
+                    </Button>
+                    <Link href={`/listings/${id}/edit`}>
+                        <Button variant="outline" size="sm">
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Edit
+                        </Button>
+                    </Link>
+                </div>
 
                 <div className="space-y-6">
                     {/* Header */}
