@@ -15,6 +15,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
     ArrowLeft,
     ExternalLink,
     MapPin,
@@ -24,6 +35,7 @@ import {
     RefreshCw,
     Star,
     Pencil,
+    Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -95,6 +107,7 @@ export default function ListingDetailPage() {
     const [listing, setListing] = useState<Listing | null>(null);
     const [loading, setLoading] = useState(true);
     const [evaluating, setEvaluating] = useState(false);
+    const [deleting, setDeleting] = useState(false);
 
     const id = params.id as string;
 
@@ -122,6 +135,21 @@ export default function ListingDetailPage() {
             toast.error("Evaluation failed. Please try again.");
         } finally {
             setEvaluating(false);
+        }
+    }
+
+    async function handleDelete() {
+        setDeleting(true);
+        try {
+            const res = await fetch(`/api/listings/${id}`, {
+                method: "DELETE",
+            });
+            if (!res.ok) throw new Error();
+            toast.success("Listing deleted");
+            router.push("/listings");
+        } catch {
+            toast.error("Failed to delete listing");
+            setDeleting(false);
         }
     }
 
@@ -166,12 +194,46 @@ export default function ListingDetailPage() {
                         <ArrowLeft className="h-4 w-4 mr-2" />
                         Back
                     </Button>
-                    <Link href={`/listings/${id}/edit`}>
-                        <Button variant="outline" size="sm">
-                            <Pencil className="h-4 w-4 mr-2" />
-                            Edit
-                        </Button>
-                    </Link>
+                    <div className="flex items-center gap-2">
+                        <Link href={`/listings/${id}/edit`}>
+                            <Button variant="outline" size="sm">
+                                <Pencil className="h-4 w-4 mr-2" />
+                                Edit
+                            </Button>
+                        </Link>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    disabled={deleting}
+                                >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    {deleting ? "Deleting..." : "Delete"}
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>
+                                        Delete this listing?
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This will permanently delete &quot;
+                                        {listing.title}&quot; and all associated
+                                        scores. This action cannot be undone.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>
+                                        Cancel
+                                    </AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleDelete}>
+                                        Delete
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
                 </div>
 
                 <div className="space-y-6">
