@@ -71,50 +71,50 @@ function AreaCard({
 
     return (
         <Card className="h-full flex flex-col">
-            <CardHeader className="pb-3">
-                <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                        <CardTitle className="text-base flex items-center gap-1.5">
-                            <MapPin className="h-4 w-4 shrink-0 text-primary" />
-                            <span className="truncate">{rec.areaName}</span>
-                        </CardTitle>
-                        {rec.vibeDescription && (
-                            <p className="text-xs text-muted-foreground mt-1 italic">
-                                {rec.vibeDescription}
-                            </p>
-                        )}
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                        <Badge className={scoreBadgeColor(displayScore)}>
-                            {displayScore.toFixed(1)}
-                        </Badge>
-                        {onDismiss && (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onDismiss(rec.areaName);
-                                }}
-                                title="Not interested in this area"
-                            >
-                                <ThumbsDown className="h-3.5 w-3.5" />
-                            </Button>
-                        )}
-                    </div>
+            <CardHeader className="pb-2">
+                <div className="flex items-center justify-between gap-2">
+                    <Badge
+                        className={`${scoreBadgeColor(displayScore)} shrink-0`}
+                    >
+                        {displayScore.toFixed(1)}
+                    </Badge>
+                    {onDismiss && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onDismiss(rec.areaName);
+                            }}
+                            title="Not interested in this area"
+                        >
+                            <ThumbsDown className="h-3.5 w-3.5" />
+                        </Button>
+                    )}
                 </div>
+                <CardTitle className="text-base flex items-center gap-1.5 mt-1">
+                    <MapPin className="h-4 w-4 shrink-0 text-primary" />
+                    {rec.areaName}
+                </CardTitle>
+                {rec.vibeDescription && (
+                    <p className="text-xs text-muted-foreground italic">
+                        {rec.vibeDescription}
+                    </p>
+                )}
             </CardHeader>
-            <CardContent className="space-y-3 flex-1 flex flex-col">
-                <p className="text-sm text-muted-foreground">{rec.reasoning}</p>
+            <CardContent className="space-y-3 flex-1 flex flex-col pt-0">
+                <p className="text-sm text-muted-foreground line-clamp-3">
+                    {rec.reasoning}
+                </p>
                 {highlights.length > 0 && (
-                    <ul className="text-sm space-y-1">
+                    <ul className="text-xs space-y-1">
                         {highlights.map((h, i) => (
-                            <li key={i} className="flex items-start gap-2">
+                            <li key={i} className="flex items-start gap-1.5">
                                 <span className="text-primary mt-0.5 shrink-0">
                                     -
                                 </span>
-                                <span>{h}</span>
+                                <span className="line-clamp-2">{h}</span>
                             </li>
                         ))}
                     </ul>
