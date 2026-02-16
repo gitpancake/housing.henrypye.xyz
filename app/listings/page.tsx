@@ -40,7 +40,7 @@ type SortOption = "newest" | "price-asc" | "price-desc" | "score-avg";
 export default function ListingsPage() {
     const [listings, setListings] = useState<Listing[]>([]);
     const [loading, setLoading] = useState(true);
-    const [sort, setSort] = useState<SortOption>("newest");
+    const [sort, setSort] = useState<SortOption>("score-avg");
     const [evaluatingAll, setEvaluatingAll] = useState(false);
 
     useEffect(() => {
