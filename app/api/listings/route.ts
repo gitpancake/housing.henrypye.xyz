@@ -66,5 +66,20 @@ export async function POST(request: Request) {
         },
     });
 
+    // Auto-create a "Call" todo if the listing has a phone number
+    if (data.contactPhone) {
+        const deadline = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        await prisma.todo.create({
+            data: {
+                userId: session.userId,
+                title: `Call ${listing.title} — ${data.contactPhone}`,
+                description: `Follow up on listing: ${listing.title}${listing.address ? ` at ${listing.address}` : ""}`,
+                scheduledAt: deadline,
+                durationMin: 15,
+                link: listing.url || null,
+            },
+        });
+    }
+
     return NextResponse.json({ listing }, { status: 201 });
 }
