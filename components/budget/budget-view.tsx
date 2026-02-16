@@ -354,7 +354,12 @@ export function BudgetView({ users, currentUserId }: BudgetViewProps) {
                                             combinedMonthlyTakeHome *
                                                 (pct / 100),
                                         );
-                                        const withinBudget = rent >= budgetMax;
+                                        const colorClass =
+                                            pct <= 33
+                                                ? "text-green-600 dark:text-green-400"
+                                                : pct >= 40
+                                                  ? "text-red-600 dark:text-red-400"
+                                                  : "text-orange-600 dark:text-orange-400";
                                         return (
                                             <tr
                                                 key={pct}
@@ -364,11 +369,7 @@ export function BudgetView({ users, currentUserId }: BudgetViewProps) {
                                                     {pct}%
                                                 </td>
                                                 <td
-                                                    className={`text-right py-2.5 px-3 tabular-nums font-semibold ${
-                                                        withinBudget
-                                                            ? "text-green-600 dark:text-green-400"
-                                                            : "text-red-600 dark:text-red-400"
-                                                    }`}
+                                                    className={`text-right py-2.5 px-3 tabular-nums font-semibold ${colorClass}`}
                                                 >
                                                     {formatCurrency(rent)}
                                                 </td>
