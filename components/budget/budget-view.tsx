@@ -355,11 +355,11 @@ export function BudgetView({ users, currentUserId }: BudgetViewProps) {
                                                 (pct / 100),
                                         );
                                         const colorClass =
-                                            pct <= 33
+                                            pct <= 30
                                                 ? "text-green-600 dark:text-green-400"
                                                 : pct >= 40
                                                   ? "text-red-600 dark:text-red-400"
-                                                  : "text-orange-600 dark:text-orange-400";
+                                                  : "text-amber-500 dark:text-amber-400";
                                         return (
                                             <tr
                                                 key={pct}
