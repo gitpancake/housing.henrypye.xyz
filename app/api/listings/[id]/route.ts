@@ -68,7 +68,7 @@ export async function PUT(
             photos: data.photos,
             notes: data.notes,
             status: data.status,
-            scrapedContent: null, // Clear so re-evaluation scrapes fresh
+            scrapedContent: data.scrapedContent ?? null,
         },
     });
 

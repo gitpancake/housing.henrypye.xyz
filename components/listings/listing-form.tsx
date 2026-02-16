@@ -15,6 +15,7 @@ import {
     CardDescription,
 } from "@/components/ui/card";
 import { toast } from "sonner";
+import { Sparkles, Loader2 } from "lucide-react";
 import dynamic from "next/dynamic";
 
 const LocationPicker = dynamic(
@@ -42,6 +43,7 @@ interface ListingFormData {
     petFriendly: boolean;
     squareFeet: string;
     photos: string[];
+    scrapedContent: string;
     notes: string;
 }
 
@@ -54,6 +56,8 @@ export function ListingForm({ listingId, initialData }: ListingFormProps) {
     const router = useRouter();
     const isEditing = !!listingId;
     const [saving, setSaving] = useState(false);
+    const [parsing, setParsing] = useState(false);
+    const [pasteText, setPasteText] = useState("");
     const [photoUrl, setPhotoUrl] = useState("");
 
     const [form, setForm] = useState<ListingFormData>({
@@ -69,6 +73,7 @@ export function ListingForm({ listingId, initialData }: ListingFormProps) {
         petFriendly: initialData?.petFriendly ?? false,
         squareFeet: initialData?.squareFeet ?? "",
         photos: initialData?.photos ?? [],
+        scrapedContent: initialData?.scrapedContent ?? "",
         notes: initialData?.notes ?? "",
     });
 
@@ -90,6 +95,59 @@ export function ListingForm({ listingId, initialData }: ListingFormProps) {
             "photos",
             form.photos.filter((_, i) => i !== index),
         );
+    }
+
+    async function handleParse() {
+        if (!pasteText.trim() || pasteText.trim().length < 20) {
+            toast.error("Please paste more listing content to parse");
+            return;
+        }
+
+        setParsing(true);
+        try {
+            const res = await fetch("/api/listings/parse", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: pasteText }),
+            });
+
+            if (!res.ok) {
+                const { error } = await res.json();
+                throw new Error(error || "Failed to parse");
+            }
+
+            const { parsed } = await res.json();
+
+            setForm((prev) => ({
+                ...prev,
+                title: parsed.title || prev.title,
+                address: parsed.address || prev.address,
+                price: parsed.price ? String(parsed.price) : prev.price,
+                bedrooms:
+                    parsed.bedrooms != null
+                        ? String(parsed.bedrooms)
+                        : prev.bedrooms,
+                bathrooms:
+                    parsed.bathrooms != null
+                        ? String(parsed.bathrooms)
+                        : prev.bathrooms,
+                squareFeet:
+                    parsed.squareFeet != null
+                        ? String(parsed.squareFeet)
+                        : prev.squareFeet,
+                petFriendly: parsed.petFriendly ?? prev.petFriendly,
+                description: parsed.description || prev.description,
+                scrapedContent: pasteText,
+            }));
+
+            toast.success("Parsed! Review the details below.");
+        } catch (err) {
+            toast.error(
+                err instanceof Error ? err.message : "Failed to parse listing",
+            );
+        } finally {
+            setParsing(false);
+        }
     }
 
     async function handleSubmit(e: React.FormEvent) {
@@ -154,6 +212,46 @@ export function ListingForm({ listingId, initialData }: ListingFormProps) {
                         : "Found a promising place? Add the details and we'll score it."}
                 </p>
             </div>
+
+            {!isEditing && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-lg">
+                            Quick Add — Paste Listing
+                        </CardTitle>
+                        <CardDescription>
+                            Paste text from apartments.com, rentals.ca, or any
+                            listing site. AI will extract the details and
+                            pre-fill the form below.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <Textarea
+                            value={pasteText}
+                            onChange={(e) => setPasteText(e.target.value)}
+                            placeholder="Paste the full listing page content here..."
+                            rows={6}
+                        />
+                        <Button
+                            type="button"
+                            onClick={handleParse}
+                            disabled={parsing || !pasteText.trim()}
+                        >
+                            {parsing ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Parsing...
+                                </>
+                            ) : (
+                                <>
+                                    <Sparkles className="mr-2 h-4 w-4" />
+                                    Parse with AI
+                                </>
+                            )}
+                        </Button>
+                    </CardContent>
+                </Card>
+            )}
 
             <Card>
                 <CardHeader>
