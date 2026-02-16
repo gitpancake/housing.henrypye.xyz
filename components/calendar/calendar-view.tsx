@@ -35,6 +35,7 @@ import {
 } from "date-fns";
 import { ViewingDialog } from "./viewing-dialog";
 import { TodoDialog, type TodoData } from "./todo-dialog";
+import { getAreaFromAddress } from "@/lib/area-utils";
 
 interface ViewingData {
     id: string;
@@ -87,16 +88,6 @@ const TODO_COLORS = {
     text: "text-emerald-800 dark:text-emerald-300",
     border: "border-emerald-300 dark:border-emerald-700",
 };
-
-function getAreaFromAddress(address: string): string {
-    if (!address) return "";
-    // Try to extract neighbourhood/area from address
-    const parts = address.split(",").map((s) => s.trim());
-    // If multiple parts, return the second part (usually the area/city)
-    // Otherwise return the first part truncated
-    if (parts.length >= 2) return parts[parts.length - 2];
-    return parts[0].length > 20 ? parts[0].slice(0, 20) + "..." : parts[0];
-}
 
 function statusBadge(status: string) {
     switch (status) {

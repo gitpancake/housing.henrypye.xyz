@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ListingCard } from "@/components/listings/listing-card";
+import { PlanViewingDayDialog } from "@/components/listings/plan-viewing-day-dialog";
 import { Button } from "@/components/ui/button";
 import {
     Select,
@@ -10,10 +11,24 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { Plus, RefreshCw } from "lucide-react";
+import {
+    Plus,
+    RefreshCw,
+    LayoutGrid,
+    MapPin,
+    CalendarPlus,
+} from "lucide-react";
 import { toast } from "sonner";
 import { PageWrapper } from "@/components/layout/page-wrapper";
+import { getEffectiveArea } from "@/lib/area-utils";
 
 type Listing = {
     id: string;
@@ -23,6 +38,8 @@ type Listing = {
     bedrooms: number | null;
     bathrooms: number | null;
     petFriendly: boolean | null;
+    neighbourhood?: string | null;
+    contactPhone?: string | null;
     photos: string[];
     status: string;
     addedByUser: { displayName: string };
@@ -36,12 +53,16 @@ type Listing = {
 };
 
 type SortOption = "newest" | "price-asc" | "price-desc" | "score-avg";
+type ViewMode = "grid" | "by-area";
 
 export default function ListingsPage() {
     const [listings, setListings] = useState<Listing[]>([]);
     const [loading, setLoading] = useState(true);
     const [sort, setSort] = useState<SortOption>("score-avg");
+    const [viewMode, setViewMode] = useState<ViewMode>("grid");
     const [evaluatingAll, setEvaluatingAll] = useState(false);
+    const [planArea, setPlanArea] = useState<string | null>(null);
+    const [planListings, setPlanListings] = useState<Listing[]>([]);
 
     useEffect(() => {
         fetch("/api/listings")
@@ -77,6 +98,24 @@ export default function ListingsPage() {
         }
     });
 
+    // Group sorted listings by area
+    const groupedByArea = sorted.reduce<Record<string, Listing[]>>(
+        (acc, listing) => {
+            const area = getEffectiveArea(listing);
+            if (!acc[area]) acc[area] = [];
+            acc[area].push(listing);
+            return acc;
+        },
+        {},
+    );
+
+    // Sort area keys: alphabetical, but "Other" always last
+    const areaKeys = Object.keys(groupedByArea).sort((a, b) => {
+        if (a === "Other") return 1;
+        if (b === "Other") return -1;
+        return a.localeCompare(b);
+    });
+
     async function handleEvaluateAll() {
         setEvaluatingAll(true);
         try {
@@ -88,7 +127,6 @@ export default function ListingsPage() {
             toast.success(
                 `Re-evaluated ${evaluated} scores${failed ? ` (${failed} failed)` : ""}`,
             );
-            // Refresh listings to show updated scores
             const listingsRes = await fetch("/api/listings");
             const data = await listingsRes.json();
             setListings(data.listings || []);
@@ -97,6 +135,11 @@ export default function ListingsPage() {
         } finally {
             setEvaluatingAll(false);
         }
+    }
+
+    function openPlanDialog(area: string) {
+        setPlanArea(area);
+        setPlanListings(groupedByArea[area] || []);
     }
 
     return (
@@ -111,6 +154,32 @@ export default function ListingsPage() {
                         </p>
                     </div>
                     <div className="flex items-center gap-3">
+                        <div className="flex rounded-md border">
+                            <Button
+                                variant={
+                                    viewMode === "grid" ? "secondary" : "ghost"
+                                }
+                                size="sm"
+                                className="rounded-r-none"
+                                onClick={() => setViewMode("grid")}
+                            >
+                                <LayoutGrid className="h-4 w-4 mr-1.5" />
+                                Grid
+                            </Button>
+                            <Button
+                                variant={
+                                    viewMode === "by-area"
+                                        ? "secondary"
+                                        : "ghost"
+                                }
+                                size="sm"
+                                className="rounded-l-none"
+                                onClick={() => setViewMode("by-area")}
+                            >
+                                <MapPin className="h-4 w-4 mr-1.5" />
+                                By Area
+                            </Button>
+                        </div>
                         <Select
                             value={sort}
                             onValueChange={(v) => setSort(v as SortOption)}
@@ -123,10 +192,10 @@ export default function ListingsPage() {
                                     Newest First
                                 </SelectItem>
                                 <SelectItem value="price-asc">
-                                    Price: Low→High
+                                    Price: Low-High
                                 </SelectItem>
                                 <SelectItem value="price-desc">
-                                    Price: High→Low
+                                    Price: High-Low
                                 </SelectItem>
                                 <SelectItem value="score-avg">
                                     Best Score
@@ -175,14 +244,71 @@ export default function ListingsPage() {
                             </Button>
                         </Link>
                     </div>
-                ) : (
+                ) : viewMode === "grid" ? (
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                         {sorted.map((listing) => (
                             <ListingCard key={listing.id} listing={listing} />
                         ))}
                     </div>
+                ) : (
+                    <Accordion
+                        type="multiple"
+                        defaultValue={areaKeys}
+                        className="space-y-2"
+                    >
+                        {areaKeys.map((area) => (
+                            <AccordionItem
+                                key={area}
+                                value={area}
+                                className="border rounded-lg px-4"
+                            >
+                                <AccordionTrigger className="hover:no-underline">
+                                    <div className="flex items-center gap-3">
+                                        <span className="font-semibold text-base">
+                                            {area}
+                                        </span>
+                                        <Badge variant="secondary">
+                                            {groupedByArea[area].length}
+                                        </Badge>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="ml-2"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                openPlanDialog(area);
+                                            }}
+                                        >
+                                            <CalendarPlus className="h-3.5 w-3.5 mr-1.5" />
+                                            Plan Viewing Day
+                                        </Button>
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent>
+                                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                                        {groupedByArea[area].map((listing) => (
+                                            <ListingCard
+                                                key={listing.id}
+                                                listing={listing}
+                                            />
+                                        ))}
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                        ))}
+                    </Accordion>
                 )}
             </div>
+
+            {planArea && (
+                <PlanViewingDayDialog
+                    open={!!planArea}
+                    onClose={() => setPlanArea(null)}
+                    onScheduled={() => {}}
+                    area={planArea}
+                    listings={planListings}
+                />
+            )}
         </PageWrapper>
     );
 }
