@@ -39,6 +39,7 @@ import {
     CalendarDays,
     Clock,
     Plus,
+    Phone,
 } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -91,6 +92,7 @@ interface Listing {
     bathrooms: number | null;
     petFriendly: boolean | null;
     squareFeet: number | null;
+    contactPhone: string | null;
     photos: string[];
     status: string;
     notes: string | null;
@@ -120,6 +122,7 @@ export default function ListingDetailPage() {
     const [loading, setLoading] = useState(true);
     const [evaluating, setEvaluating] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [creatingCallTodo, setCreatingCallTodo] = useState(false);
     const [viewings, setViewings] = useState<ViewingItem[]>([]);
 
     const id = params.id as string;
@@ -192,6 +195,31 @@ export default function ListingDetailPage() {
             fetchListing();
         } catch {
             toast.error("Failed to update score");
+        }
+    }
+
+    async function handleCreateCallTodo() {
+        if (!listing?.contactPhone) return;
+        setCreatingCallTodo(true);
+        try {
+            const deadline = new Date(Date.now() + 24 * 60 * 60 * 1000);
+            const res = await fetch("/api/todos", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    title: `Call ${listing.title} — ${listing.contactPhone}`,
+                    description: `Follow up on listing: ${listing.title}${listing.address ? ` at ${listing.address}` : ""}`,
+                    scheduledAt: deadline.toISOString(),
+                    durationMin: 15,
+                    link: listing.url || undefined,
+                }),
+            });
+            if (!res.ok) throw new Error();
+            toast.success("Call todo created! Check your Tasks page.");
+        } catch {
+            toast.error("Failed to create todo");
+        } finally {
+            setCreatingCallTodo(false);
         }
     }
 
@@ -337,18 +365,42 @@ export default function ListingDetailPage() {
                         )}
                     </div>
 
-                    {/* URL */}
-                    {listing.url && (
-                        <a
-                            href={listing.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
-                        >
-                            <ExternalLink className="h-3.5 w-3.5" />
-                            View Original Listing
-                        </a>
-                    )}
+                    {/* URL + Phone */}
+                    <div className="flex flex-wrap items-center gap-4">
+                        {listing.url && (
+                            <a
+                                href={listing.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+                            >
+                                <ExternalLink className="h-3.5 w-3.5" />
+                                View Original Listing
+                            </a>
+                        )}
+                        {listing.contactPhone && (
+                            <a
+                                href={`tel:${listing.contactPhone}`}
+                                className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+                            >
+                                <Phone className="h-3.5 w-3.5" />
+                                {listing.contactPhone}
+                            </a>
+                        )}
+                        {listing.contactPhone && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleCreateCallTodo}
+                                disabled={creatingCallTodo}
+                            >
+                                <Phone className="h-4 w-4 mr-2" />
+                                {creatingCallTodo
+                                    ? "Creating..."
+                                    : "Add Call Todo"}
+                            </Button>
+                        )}
+                    </div>
 
                     {/* Location */}
                     {(listing.address ||
