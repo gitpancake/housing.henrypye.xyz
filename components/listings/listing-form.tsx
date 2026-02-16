@@ -43,6 +43,11 @@ interface ListingFormData {
     petFriendly: boolean;
     squareFeet: string;
     contactPhone: string;
+    parking: string;
+    laundry: string;
+    yearBuilt: string;
+    availableDate: string;
+    neighbourhood: string;
     photos: string[];
     scrapedContent: string;
     notes: string;
@@ -74,6 +79,11 @@ export function ListingForm({ listingId, initialData }: ListingFormProps) {
         petFriendly: initialData?.petFriendly ?? false,
         squareFeet: initialData?.squareFeet ?? "",
         contactPhone: initialData?.contactPhone ?? "",
+        parking: initialData?.parking ?? "",
+        laundry: initialData?.laundry ?? "",
+        yearBuilt: initialData?.yearBuilt ?? "",
+        availableDate: initialData?.availableDate ?? "",
+        neighbourhood: initialData?.neighbourhood ?? "",
         photos: initialData?.photos ?? [],
         scrapedContent: initialData?.scrapedContent ?? "",
         notes: initialData?.notes ?? "",
@@ -139,6 +149,14 @@ export function ListingForm({ listingId, initialData }: ListingFormProps) {
                         : prev.squareFeet,
                 petFriendly: parsed.petFriendly ?? prev.petFriendly,
                 contactPhone: parsed.contactPhone || prev.contactPhone,
+                parking: parsed.parking || prev.parking,
+                laundry: parsed.laundry || prev.laundry,
+                yearBuilt:
+                    parsed.yearBuilt != null
+                        ? String(parsed.yearBuilt)
+                        : prev.yearBuilt,
+                availableDate: parsed.availableDate || prev.availableDate,
+                neighbourhood: parsed.neighbourhood || prev.neighbourhood,
                 description: parsed.description || prev.description,
                 scrapedContent: pasteText,
             }));
@@ -373,17 +391,77 @@ export function ListingForm({ listingId, initialData }: ListingFormProps) {
                         </Label>
                     </div>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="contactPhone">Contact Phone</Label>
-                        <Input
-                            id="contactPhone"
-                            type="tel"
-                            value={form.contactPhone}
-                            onChange={(e) =>
-                                update("contactPhone", e.target.value)
-                            }
-                            placeholder="(778) 655-3101"
-                        />
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                        <div className="space-y-2">
+                            <Label htmlFor="contactPhone">Contact Phone</Label>
+                            <Input
+                                id="contactPhone"
+                                type="tel"
+                                value={form.contactPhone}
+                                onChange={(e) =>
+                                    update("contactPhone", e.target.value)
+                                }
+                                placeholder="(778) 655-3101"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="parking">Parking</Label>
+                            <Input
+                                id="parking"
+                                value={form.parking}
+                                onChange={(e) =>
+                                    update("parking", e.target.value)
+                                }
+                                placeholder="Underground, fee not included"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="laundry">Laundry</Label>
+                            <Input
+                                id="laundry"
+                                value={form.laundry}
+                                onChange={(e) =>
+                                    update("laundry", e.target.value)
+                                }
+                                placeholder="In-suite"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="yearBuilt">Year Built</Label>
+                            <Input
+                                id="yearBuilt"
+                                type="number"
+                                value={form.yearBuilt}
+                                onChange={(e) =>
+                                    update("yearBuilt", e.target.value)
+                                }
+                                placeholder="2020"
+                                min={1900}
+                                max={2030}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="availableDate">Available</Label>
+                            <Input
+                                id="availableDate"
+                                value={form.availableDate}
+                                onChange={(e) =>
+                                    update("availableDate", e.target.value)
+                                }
+                                placeholder="Mar 1 2026"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="neighbourhood">Neighbourhood</Label>
+                            <Input
+                                id="neighbourhood"
+                                value={form.neighbourhood}
+                                onChange={(e) =>
+                                    update("neighbourhood", e.target.value)
+                                }
+                                placeholder="West End"
+                            />
+                        </div>
                     </div>
                 </CardContent>
             </Card>

@@ -35,6 +35,12 @@ export default function EditListingPage() {
                         squareFeet:
                             l.squareFeet != null ? String(l.squareFeet) : "",
                         contactPhone: l.contactPhone ?? "",
+                        parking: l.parking ?? "",
+                        laundry: l.laundry ?? "",
+                        yearBuilt:
+                            l.yearBuilt != null ? String(l.yearBuilt) : "",
+                        availableDate: l.availableDate ?? "",
+                        neighbourhood: l.neighbourhood ?? "",
                         photos: l.photos ?? [],
                         scrapedContent: l.scrapedContent ?? "",
                         notes: l.notes ?? "",

@@ -88,6 +88,11 @@ model Listing {
   petFriendly    Boolean?      @map("pet_friendly")
   squareFeet     Int?          @map("square_feet")
   contactPhone   String?       @map("contact_phone")
+  parking        String?
+  laundry        String?
+  yearBuilt      Int?          @map("year_built")
+  availableDate  String?       @map("available_date")
+  neighbourhood  String?
   photos         Json          @default("[]")
   scrapedContent String?       @map("scraped_content")
   status         ListingStatus @default(ACTIVE)

@@ -9,6 +9,11 @@ export interface ParsedListing {
     squareFeet: number | null;
     petFriendly: boolean | null;
     contactPhone: string | null;
+    parking: string | null;
+    laundry: string | null;
+    yearBuilt: number | null;
+    availableDate: string | null;
+    neighbourhood: string | null;
     description: string;
 }
 
@@ -29,19 +34,29 @@ RULES:
 - squareFeet: Square footage as a number. If a range, use the LOWEST number.
 - petFriendly: true if pets are allowed, false if explicitly not allowed, null if not mentioned.
 - contactPhone: Phone number for the property/landlord/contact person if listed. Include the full number with area code (e.g. "(778) 655-3101"). null if not found.
+- parking: Short description of parking situation (e.g. "Underground, fee not included", "1 spot included", "Street parking only"). null if not mentioned.
+- laundry: One of "In-suite", "On-site", "None", or null if not mentioned. "In-suite" means washer/dryer in the unit. "On-site" means shared laundry facilities in the building.
+- yearBuilt: The year the building was built as a number (e.g. 2020). null if not mentioned.
+- availableDate: When the unit is available (e.g. "Available Now", "Mar 1 2026"). null if not mentioned.
+- neighbourhood: The neighbourhood/area name (e.g. "West End", "Kitsilano", "Mount Pleasant"). null if not clear.
 - description: Write a clean 2-4 sentence summary of the listing covering: location highlights, key amenities, building features, and any move-in specials. Do NOT include boilerplate, navigation text, or legal disclaimers.
 
 Respond with ONLY valid JSON in this exact format:
 {
-  "title": "The Pendrell",
-  "address": "1770 Pendrell St, Vancouver, BC V6G 0C5",
-  "price": 2495,
-  "bedrooms": 1,
+  "title": "Shoreline West End",
+  "address": "1763 Comox Street, Vancouver, BC",
+  "price": 1925,
+  "bedrooms": 0,
   "bathrooms": 1,
-  "squareFeet": 487,
-  "petFriendly": true,
+  "squareFeet": 420,
+  "petFriendly": null,
   "contactPhone": "(778) 655-3101",
-  "description": "Modern apartment in Vancouver's West End with rooftop terrace, dog park, and fitness facilities. 1 month free rent promotion available."
+  "parking": "Underground, fee not included",
+  "laundry": "In-suite",
+  "yearBuilt": 2020,
+  "availableDate": "Available Now",
+  "neighbourhood": "West End",
+  "description": "Modern 32-storey tower in the West End with views of English Bay. In-suite laundry, balconies, fitness room, EV charging, and connected to Denman Place Mall."
 }`;
 
     const response = await anthropic.messages.create({
