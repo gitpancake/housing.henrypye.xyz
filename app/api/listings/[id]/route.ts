@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { geocodeAddress } from "@/lib/geocode";
 
 export async function GET(
     _request: NextRequest,
@@ -51,6 +52,17 @@ export async function PUT(
     const { id } = await params;
     const data = await request.json();
 
+    // Auto-geocode if address provided but no coordinates
+    let latitude = data.latitude ? parseFloat(data.latitude) : null;
+    let longitude = data.longitude ? parseFloat(data.longitude) : null;
+    if (data.address && !latitude && !longitude) {
+        const coords = await geocodeAddress(data.address);
+        if (coords) {
+            latitude = coords.lat;
+            longitude = coords.lng;
+        }
+    }
+
     const listing = await prisma.listing.update({
         where: { id },
         data: {
@@ -58,8 +70,8 @@ export async function PUT(
             description: data.description,
             url: data.url,
             address: data.address,
-            latitude: data.latitude ? parseFloat(data.latitude) : null,
-            longitude: data.longitude ? parseFloat(data.longitude) : null,
+            latitude,
+            longitude,
             price: data.price ? parseInt(data.price) : null,
             bedrooms: data.bedrooms ? parseInt(data.bedrooms) : null,
             bathrooms: data.bathrooms ? parseInt(data.bathrooms) : null,
