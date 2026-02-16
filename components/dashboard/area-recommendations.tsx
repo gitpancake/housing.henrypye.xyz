@@ -418,8 +418,8 @@ export function AreaRecommendations({
                         No area recommendations yet
                     </h3>
                     <p className="text-sm text-muted-foreground mb-4">
-                        Complete your preferences to get AI-powered
-                        neighbourhood recommendations.
+                        Generate AI-powered neighbourhood recommendations based
+                        on your preferences.
                     </p>
                     <Button onClick={handleRefresh} disabled={refreshing}>
                         <RefreshCw
@@ -580,9 +580,10 @@ export function AreaRecommendations({
                                         key={other.id}
                                         className="text-sm text-muted-foreground mt-4"
                                     >
-                                        Waiting for {other.displayName} to
-                                        complete preferences to show shared
-                                        recommendations.
+                                        {other.displayName}&apos;s
+                                        recommendations haven&apos;t been
+                                        generated yet. Hit refresh to generate
+                                        for everyone.
                                     </p>
                                 ))}
                         </div>
