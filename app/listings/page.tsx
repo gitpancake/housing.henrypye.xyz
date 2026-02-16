@@ -11,7 +11,8 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 import { PageWrapper } from "@/components/layout/page-wrapper";
 
 type Listing = {
@@ -40,6 +41,7 @@ export default function ListingsPage() {
     const [listings, setListings] = useState<Listing[]>([]);
     const [loading, setLoading] = useState(true);
     const [sort, setSort] = useState<SortOption>("newest");
+    const [evaluatingAll, setEvaluatingAll] = useState(false);
 
     useEffect(() => {
         fetch("/api/listings")
@@ -75,6 +77,28 @@ export default function ListingsPage() {
         }
     });
 
+    async function handleEvaluateAll() {
+        setEvaluatingAll(true);
+        try {
+            const res = await fetch("/api/listings/evaluate-all", {
+                method: "POST",
+            });
+            if (!res.ok) throw new Error();
+            const { evaluated, failed } = await res.json();
+            toast.success(
+                `Re-evaluated ${evaluated} scores${failed ? ` (${failed} failed)` : ""}`,
+            );
+            // Refresh listings to show updated scores
+            const listingsRes = await fetch("/api/listings");
+            const data = await listingsRes.json();
+            setListings(data.listings || []);
+        } catch {
+            toast.error("Batch evaluation failed");
+        } finally {
+            setEvaluatingAll(false);
+        }
+    }
+
     return (
         <PageWrapper>
             <div className="mx-auto max-w-6xl px-4 py-8">
@@ -109,6 +133,18 @@ export default function ListingsPage() {
                                 </SelectItem>
                             </SelectContent>
                         </Select>
+                        <Button
+                            variant="outline"
+                            onClick={handleEvaluateAll}
+                            disabled={evaluatingAll || listings.length === 0}
+                        >
+                            <RefreshCw
+                                className={`h-4 w-4 mr-2 ${evaluatingAll ? "animate-spin" : ""}`}
+                            />
+                            {evaluatingAll
+                                ? "Evaluating..."
+                                : "Re-evaluate All"}
+                        </Button>
                         <Link href="/listings/new">
                             <Button>
                                 <Plus className="h-4 w-4 mr-2" />
