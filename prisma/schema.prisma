@@ -26,6 +26,7 @@ model User {
   viewings            Viewing[]
   dismissedAreas      DismissedArea[]
   areaNotes           AreaNote[]
+  todos               Todo[]
 
   @@map("users")
   @@schema("housing")
@@ -195,5 +196,24 @@ model AreaNote {
 
   @@unique([userId, areaName])
   @@map("area_notes")
+  @@schema("housing")
+}
+
+model Todo {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  title       String
+  description String?
+  scheduledAt DateTime @map("scheduled_at")
+  durationMin Int      @default(30) @map("duration_min")
+  location    String?
+  link        String?
+  completed   Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("todos")
   @@schema("housing")
 }

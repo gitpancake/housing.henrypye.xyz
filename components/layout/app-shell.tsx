@@ -11,6 +11,7 @@ import {
     MapIcon,
     CalendarDays,
     DollarSign,
+    CheckSquare,
     User,
     Shield,
     LogOut,
@@ -33,6 +34,7 @@ const NAV_ITEMS = [
     { href: "/listings", label: "Listings", icon: List },
     { href: "/map", label: "Map", icon: MapIcon },
     { href: "/calendar", label: "Calendar", icon: CalendarDays },
+    { href: "/todos", label: "Tasks", icon: CheckSquare },
     { href: "/budget", label: "Budget", icon: DollarSign },
     { href: "/profile", label: "Profile", icon: User },
 ];
