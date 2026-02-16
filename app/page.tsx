@@ -97,6 +97,14 @@ export default async function HomePage() {
         orderBy: { updatedAt: "desc" },
     });
 
+    // Build onboarding status per user
+    const onboardedUserIds = new Set(usersWithPrefs.map((u) => u.id));
+    const userStatuses = allUsers.map((u) => ({
+        id: u.id,
+        displayName: u.displayName,
+        preferencesComplete: onboardedUserIds.has(u.id),
+    }));
+
     return (
         <AppShell
             user={{
@@ -113,6 +121,7 @@ export default async function HomePage() {
                 currentUserId={session.userId}
                 dismissedAreas={dismissedAreas}
                 areaNotes={areaNotes}
+                userStatuses={userStatuses}
             />
         </AppShell>
     );

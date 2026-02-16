@@ -1,10 +1,21 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, TrendingUp, Home, Star, ArrowRight } from "lucide-react";
+import {
+    Plus,
+    TrendingUp,
+    Home,
+    Star,
+    ArrowRight,
+    CheckCircle2,
+    Circle,
+    Sparkles,
+    RefreshCw,
+} from "lucide-react";
 import { AreaRecommendations } from "./area-recommendations";
 
 interface Score {
@@ -54,6 +65,12 @@ interface AreaNoteData {
     user: { id: string; displayName: string };
 }
 
+interface UserStatus {
+    id: string;
+    displayName: string;
+    preferencesComplete: boolean;
+}
+
 interface DashboardContentProps {
     listings: Listing[];
     users: { id: string; username: string; displayName: string }[];
@@ -62,6 +79,7 @@ interface DashboardContentProps {
     currentUserId: string;
     dismissedAreas: DismissedAreaData[];
     areaNotes: AreaNoteData[];
+    userStatuses: UserStatus[];
 }
 
 function getEffectiveScore(score: Score): number | null {
@@ -83,7 +101,9 @@ export function DashboardContent({
     currentUserId,
     dismissedAreas,
     areaNotes,
+    userStatuses,
 }: DashboardContentProps) {
+    const [generatingRecs, setGeneratingRecs] = useState(false);
     const activeListings = listings.filter(
         (l) => l.status === "ACTIVE" || l.status === "FAVORITE",
     );
@@ -124,6 +144,20 @@ export function DashboardContent({
         })
         .filter((s) => s.avg != null)
         .sort((a, b) => (b.avg ?? 0) - (a.avg ?? 0));
+
+    const allPrefsComplete = userStatuses.every((u) => u.preferencesComplete);
+    const hasRecs = recommendations.length > 0;
+
+    async function handleGenerateRecs() {
+        setGeneratingRecs(true);
+        try {
+            const res = await fetch("/api/recommendations", { method: "POST" });
+            if (!res.ok) throw new Error();
+            window.location.reload();
+        } catch {
+            setGeneratingRecs(false);
+        }
+    }
 
     return (
         <div className="p-4 md:p-6 space-y-6 max-w-6xl mx-auto">
@@ -212,6 +246,91 @@ export function DashboardContent({
                     );
                 })}
             </div>
+
+            {/* Setup status — show when not everyone has prefs or no recs yet */}
+            {(!allPrefsComplete || !hasRecs) && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-lg flex items-center gap-2">
+                            <Sparkles className="h-5 w-5 text-primary" />
+                            Getting Started
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-3">
+                            {userStatuses.map((u) => (
+                                <div
+                                    key={u.id}
+                                    className="flex items-center gap-3"
+                                >
+                                    {u.preferencesComplete ? (
+                                        <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 shrink-0" />
+                                    ) : (
+                                        <Circle className="h-5 w-5 text-muted-foreground shrink-0" />
+                                    )}
+                                    <span
+                                        className={
+                                            u.preferencesComplete
+                                                ? "text-sm"
+                                                : "text-sm text-muted-foreground"
+                                        }
+                                    >
+                                        {u.displayName}
+                                        {u.preferencesComplete
+                                            ? " — preferences complete"
+                                            : " — waiting for preferences"}
+                                    </span>
+                                    {!u.preferencesComplete &&
+                                        u.id === currentUserId && (
+                                            <Link href="/onboarding">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                >
+                                                    Complete Setup
+                                                </Button>
+                                            </Link>
+                                        )}
+                                </div>
+                            ))}
+                        </div>
+
+                        {allPrefsComplete && !hasRecs && (
+                            <div className="rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 p-4 text-center">
+                                <p className="text-sm font-medium mb-3">
+                                    Both of you are set up! Generate AI-powered
+                                    neighbourhood recommendations based on your
+                                    combined preferences.
+                                </p>
+                                <Button
+                                    onClick={handleGenerateRecs}
+                                    disabled={generatingRecs}
+                                >
+                                    {generatingRecs ? (
+                                        <>
+                                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                            Generating...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Sparkles className="h-4 w-4 mr-2" />
+                                            Generate Area Recommendations
+                                        </>
+                                    )}
+                                </Button>
+                            </div>
+                        )}
+
+                        {!allPrefsComplete && (
+                            <p className="text-xs text-muted-foreground">
+                                Once everyone completes their preferences,
+                                you&apos;ll be able to generate neighbourhood
+                                recommendations.
+                            </p>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
 
             {/* Area Recommendations */}
             <AreaRecommendations
