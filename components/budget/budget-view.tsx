@@ -302,7 +302,7 @@ export function BudgetView({ users, currentUserId }: BudgetViewProps) {
                             </div>
                             <div className="rounded-lg bg-primary/5 border-2 border-primary/20 p-4 text-center">
                                 <p className="text-xs text-muted-foreground mb-1">
-                                    Affordable Rent (30%)
+                                    Affordable Rent (33%)
                                 </p>
                                 <p className="text-xl font-bold text-primary">
                                     {formatCurrency(affordableRent)}
