@@ -87,6 +87,7 @@ model Listing {
   bathrooms      Int?
   petFriendly    Boolean?      @map("pet_friendly")
   squareFeet     Int?          @map("square_feet")
+  contactPhone   String?       @map("contact_phone")
   photos         Json          @default("[]")
   scrapedContent String?       @map("scraped_content")
   status         ListingStatus @default(ACTIVE)

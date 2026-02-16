@@ -49,6 +49,7 @@ export async function POST(request: Request) {
             bathrooms: data.bathrooms ? parseInt(data.bathrooms) : null,
             petFriendly: data.petFriendly ?? null,
             squareFeet: data.squareFeet ? parseInt(data.squareFeet) : null,
+            contactPhone: data.contactPhone || null,
             photos: data.photos || [],
             scrapedContent: data.scrapedContent || null,
             notes: data.notes || null,

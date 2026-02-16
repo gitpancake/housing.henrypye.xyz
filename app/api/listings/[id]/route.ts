@@ -65,6 +65,7 @@ export async function PUT(
             bathrooms: data.bathrooms ? parseInt(data.bathrooms) : null,
             petFriendly: data.petFriendly,
             squareFeet: data.squareFeet ? parseInt(data.squareFeet) : null,
+            contactPhone: data.contactPhone || null,
             photos: data.photos,
             notes: data.notes,
             status: data.status,

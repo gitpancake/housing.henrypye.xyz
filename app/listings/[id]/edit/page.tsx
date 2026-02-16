@@ -34,6 +34,7 @@ export default function EditListingPage() {
                         petFriendly: l.petFriendly ?? false,
                         squareFeet:
                             l.squareFeet != null ? String(l.squareFeet) : "",
+                        contactPhone: l.contactPhone ?? "",
                         photos: l.photos ?? [],
                         scrapedContent: l.scrapedContent ?? "",
                         notes: l.notes ?? "",

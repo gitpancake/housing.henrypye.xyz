@@ -42,6 +42,7 @@ interface ListingFormData {
     bathrooms: string;
     petFriendly: boolean;
     squareFeet: string;
+    contactPhone: string;
     photos: string[];
     scrapedContent: string;
     notes: string;
@@ -72,6 +73,7 @@ export function ListingForm({ listingId, initialData }: ListingFormProps) {
         bathrooms: initialData?.bathrooms ?? "",
         petFriendly: initialData?.petFriendly ?? false,
         squareFeet: initialData?.squareFeet ?? "",
+        contactPhone: initialData?.contactPhone ?? "",
         photos: initialData?.photos ?? [],
         scrapedContent: initialData?.scrapedContent ?? "",
         notes: initialData?.notes ?? "",
@@ -136,6 +138,7 @@ export function ListingForm({ listingId, initialData }: ListingFormProps) {
                         ? String(parsed.squareFeet)
                         : prev.squareFeet,
                 petFriendly: parsed.petFriendly ?? prev.petFriendly,
+                contactPhone: parsed.contactPhone || prev.contactPhone,
                 description: parsed.description || prev.description,
                 scrapedContent: pasteText,
             }));
@@ -368,6 +371,19 @@ export function ListingForm({ listingId, initialData }: ListingFormProps) {
                         <Label htmlFor="petFriendly" className="cursor-pointer">
                             Pet Friendly
                         </Label>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="contactPhone">Contact Phone</Label>
+                        <Input
+                            id="contactPhone"
+                            type="tel"
+                            value={form.contactPhone}
+                            onChange={(e) =>
+                                update("contactPhone", e.target.value)
+                            }
+                            placeholder="(778) 655-3101"
+                        />
                     </div>
                 </CardContent>
             </Card>
