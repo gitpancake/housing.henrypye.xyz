@@ -346,7 +346,7 @@ export function BudgetView({ users, currentUserId }: BudgetViewProps) {
                                     {[
                                         { pct: 25, label: "Conservative" },
                                         { pct: 30, label: "Recommended" },
-                                        { pct: 33, label: "Comfortable" },
+                                        { pct: 33, label: "Sweet Spot" },
                                         { pct: 35, label: "Stretching" },
                                         { pct: 40, label: "Maximum" },
                                     ].map(({ pct, label }) => {
@@ -355,15 +355,17 @@ export function BudgetView({ users, currentUserId }: BudgetViewProps) {
                                                 (pct / 100),
                                         );
                                         const colorClass =
-                                            pct <= 30
-                                                ? "text-green-600 dark:text-green-400"
-                                                : pct >= 40
-                                                  ? "text-red-600 dark:text-red-400"
-                                                  : "text-amber-500 dark:text-amber-400";
+                                            pct === 33
+                                                ? "text-emerald-600 dark:text-emerald-400"
+                                                : pct < 33
+                                                  ? "text-green-400 dark:text-green-500"
+                                                  : pct >= 40
+                                                    ? "text-red-600 dark:text-red-400"
+                                                    : "text-amber-500 dark:text-amber-400";
                                         return (
                                             <tr
                                                 key={pct}
-                                                className={`border-b last:border-0 ${pct === 30 ? "bg-primary/5 font-medium" : ""}`}
+                                                className={`border-b last:border-0 ${pct === 33 ? "bg-primary/5 font-medium" : ""}`}
                                             >
                                                 <td className="py-2.5 pr-4">
                                                     {pct}%
