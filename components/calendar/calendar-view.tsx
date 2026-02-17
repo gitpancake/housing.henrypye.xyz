@@ -213,8 +213,8 @@ export function CalendarView({
         return todos.filter((t) => isSameDay(new Date(t.scheduledAt), day));
     }
 
-    // Week view: hours from 8am to 8pm
-    const weekHours = Array.from({ length: 13 }, (_, i) => i + 8);
+    // Week view: hours from 8am to 10pm
+    const weekHours = Array.from({ length: 15 }, (_, i) => i + 8);
 
     return (
         <div className="space-y-4">
