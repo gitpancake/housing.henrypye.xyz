@@ -1,5 +1,4 @@
-// BC + Federal tax calculation (2025 brackets as proxy for 2026)
-// CPP/EI excluded — this is an estimate
+import { locationConfig } from "@/lib/location-config";
 
 interface TaxBracket {
     min: number;
@@ -7,25 +6,11 @@ interface TaxBracket {
     rate: number;
 }
 
-const FEDERAL_BPA = 16129;
-const BC_BPA = 12580;
+const FEDERAL_BPA = locationConfig.federalBasicPersonalAmount;
+const PROVINCIAL_BPA = locationConfig.provincialBasicPersonalAmount;
 
-const FEDERAL_BRACKETS: TaxBracket[] = [
-    { min: 0, max: 57375, rate: 0.15 },
-    { min: 57375, max: 114750, rate: 0.205 },
-    { min: 114750, max: 158468, rate: 0.26 },
-    { min: 158468, max: 220000, rate: 0.29 },
-    { min: 220000, max: Infinity, rate: 0.33 },
-];
-
-const BC_BRACKETS: TaxBracket[] = [
-    { min: 0, max: 47937, rate: 0.0506 },
-    { min: 47937, max: 95875, rate: 0.077 },
-    { min: 95875, max: 110076, rate: 0.105 },
-    { min: 110076, max: 133664, rate: 0.1229 },
-    { min: 133664, max: 181232, rate: 0.147 },
-    { min: 181232, max: Infinity, rate: 0.168 },
-];
+const FEDERAL_BRACKETS: TaxBracket[] = locationConfig.federalBrackets;
+const PROVINCIAL_BRACKETS: TaxBracket[] = locationConfig.provincialBrackets;
 
 function applyBrackets(income: number, brackets: TaxBracket[]): number {
     let tax = 0;
@@ -43,10 +28,10 @@ function calculateFederalTax(annualSalary: number): number {
     return Math.max(0, grossTax - federalCredit);
 }
 
-function calculateBCTax(annualSalary: number): number {
-    const bcCredit = BC_BPA * 0.0506;
-    const grossTax = applyBrackets(annualSalary, BC_BRACKETS);
-    return Math.max(0, grossTax - bcCredit);
+function calculateProvincialTax(annualSalary: number): number {
+    const provincialCredit = PROVINCIAL_BPA * PROVINCIAL_BRACKETS[0].rate;
+    const grossTax = applyBrackets(annualSalary, PROVINCIAL_BRACKETS);
+    return Math.max(0, grossTax - provincialCredit);
 }
 
 export interface TakeHomeResult {
@@ -59,7 +44,7 @@ export interface TakeHomeResult {
 
 export function calculateTakeHome(annualSalary: number): TakeHomeResult {
     const federalTax = calculateFederalTax(annualSalary);
-    const provincialTax = calculateBCTax(annualSalary);
+    const provincialTax = calculateProvincialTax(annualSalary);
     const totalTax = federalTax + provincialTax;
     const annualTakeHome = annualSalary - totalTax;
     const monthlyTakeHome = Math.round(annualTakeHome / 12);

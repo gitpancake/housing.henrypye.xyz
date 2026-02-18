@@ -1,6 +1,7 @@
 import { anthropic } from "./anthropic-client";
 import { prisma } from "@/lib/db";
 import { computePreferencesHash } from "./preferences-hash";
+import { locationConfig } from "@/lib/location-config";
 
 interface UserPreferences {
     naturalLight: boolean;
@@ -109,37 +110,15 @@ async function recommendAreas(
 
     const priorityList = priorities.map((p, i) => `${i + 1}. ${p}`).join("\n");
 
-    const prompt = `You are a knowledgeable Vancouver real estate advisor helping ${userName} find the best neighbourhoods to search for an apartment. You have deep knowledge of Vancouver and Greater Vancouver neighbourhoods, their character, rental markets, transit access, and amenities.
+    const prompt = `You are a knowledgeable ${locationConfig.cityName} real estate advisor helping ${userName} find the best neighbourhoods to search for an apartment. You have deep knowledge of ${locationConfig.regionName} neighbourhoods, their character, rental markets, transit access, and amenities.
 
 USER'S PRIORITIES:
 ${priorityList}
 
-VANCOUVER NEIGHBOURHOODS TO CONSIDER:
-Consider ALL of the following areas across Vancouver and Greater Vancouver. Do not limit yourself to only the City of Vancouver — many renters find excellent value in surrounding municipalities:
+NEIGHBOURHOODS TO CONSIDER:
+Consider ALL of the following areas. Do not limit yourself to just the core city — many renters find excellent value in surrounding municipalities:
 
-**City of Vancouver:**
-- Kitsilano (Kits) — Beach area, active lifestyle, moderate-to-high rents
-- Mount Pleasant — Trendy, breweries, Main St shops, central location
-- Commercial Drive (The Drive) — Eclectic, multicultural, community feel, affordable-ish
-- Fairview / South Granville — Central, Granville Island nearby, transit-connected
-- West End / English Bay — Dense, walkable, beach access, many older apartments
-- Gastown / Chinatown / Strathcona — Historic, arts scene, some rough edges, improving
-- Hastings-Sunrise — More affordable, quieter, good parks, growing amenities
-- Riley Park / Little Mountain — Residential, Queen Elizabeth Park, family-friendly
-- Marpole — Affordable, near YVR, Canada Line access, quieter
-- Kerrisdale / Dunbar — Quiet, upscale residential, less transit
-- Point Grey / UBC — Near university, quieter, some rental options
-- Yaletown / False Creek — Modern condos, walkable, pricey, urban
-- Olympic Village — Newer builds, seawall access, modern amenities
-
-**Greater Vancouver:**
-- Burnaby (Metrotown area) — Affordable, SkyTrain access, malls, diverse food
-- Burnaby (Brentwood/Lougheed) — Newer towers, SkyTrain, growing rapidly
-- New Westminster — Very affordable, SkyTrain, historic downtown, river views
-- North Vancouver (Lonsdale) — Mountain views, Seabus to downtown, outdoorsy
-- North Vancouver (Lynn Valley/Deep Cove) — Nature-focused, quieter, less transit
-- Coquitlam/Port Moody — Affordable, Evergreen Line SkyTrain, nature trails
-- Richmond (City Centre) — Canada Line, diverse food scene, flat terrain
+${locationConfig.neighbourhoods}
 
 ${
     excludedAreas.length > 0
@@ -174,7 +153,7 @@ Use this feedback to adjust your recommendations. If users liked certain qualiti
 7. Transit score should name specific transit options (e.g., "Expo Line — Commercial-Broadway station, 5 min walk")
 8. Vibe description should be a brief, evocative phrase (e.g., "Chill beach town meets yoga studio")
 9. Reasoning should be 2-3 sentences explaining WHY this area matches (or partially matches) their priorities
-10. If a preference cannot be well-served in Vancouver's rental market, note this honestly
+10. If a preference cannot be well-served in the local rental market, note this honestly
 
 Respond with ONLY valid JSON in this exact format:
 {

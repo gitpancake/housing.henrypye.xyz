@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { locationConfig } from "@/lib/location-config";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -126,7 +127,7 @@ function TaxBreakdownCard({
                         </div>
                         <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">
-                                BC Provincial Tax
+                                {locationConfig.taxLabel}
                             </span>
                             <span className="text-red-600 dark:text-red-400">
                                 -{formatCurrency(breakdown.provincialTax)}

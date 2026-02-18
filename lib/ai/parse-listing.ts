@@ -1,4 +1,5 @@
 import { anthropic } from "./anthropic-client";
+import { locationConfig } from "@/lib/location-config";
 
 export interface ParsedListing {
     title: string;
@@ -43,8 +44,8 @@ RULES:
 
 Respond with ONLY valid JSON in this exact format:
 {
-  "title": "Shoreline West End",
-  "address": "1763 Comox Street, Vancouver, BC",
+  "title": "${locationConfig.exampleParsedListing.title}",
+  "address": "${locationConfig.exampleParsedListing.address}",
   "price": 1925,
   "bedrooms": 0,
   "bathrooms": 1,
@@ -55,8 +56,8 @@ Respond with ONLY valid JSON in this exact format:
   "laundry": "In-suite",
   "yearBuilt": 2020,
   "availableDate": "Available Now",
-  "neighbourhood": "West End",
-  "description": "Modern 32-storey tower in the West End with views of English Bay. In-suite laundry, balconies, fitness room, EV charging, and connected to Denman Place Mall."
+  "neighbourhood": "${locationConfig.exampleParsedListing.neighbourhood}",
+  "description": "${locationConfig.exampleParsedListing.description}"
 }`;
 
     const response = await anthropic.messages.create({

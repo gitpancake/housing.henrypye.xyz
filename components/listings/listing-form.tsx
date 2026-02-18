@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { locationConfig } from "@/lib/location-config";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -459,7 +460,9 @@ export function ListingForm({ listingId, initialData }: ListingFormProps) {
                                 onChange={(e) =>
                                     update("neighbourhood", e.target.value)
                                 }
-                                placeholder="West End"
+                                placeholder={
+                                    locationConfig.exampleNeighbourhood
+                                }
                             />
                         </div>
                     </div>
@@ -480,7 +483,7 @@ export function ListingForm({ listingId, initialData }: ListingFormProps) {
                             id="address"
                             value={form.address}
                             onChange={(e) => update("address", e.target.value)}
-                            placeholder="123 Main St, Vancouver, BC"
+                            placeholder={locationConfig.exampleAddress}
                         />
                     </div>
                     <LocationPicker

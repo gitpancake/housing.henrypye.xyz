@@ -1,4 +1,5 @@
 import { anthropic } from "./anthropic-client";
+import { locationConfig } from "@/lib/location-config";
 
 interface UserPreferences {
     naturalLight: boolean;
@@ -134,7 +135,7 @@ export async function evaluateListing(
 
     const importantCount = togglePrefs.filter((p) => preferences[p.key]).length;
 
-    const prompt = `You are evaluating an apartment listing for ${userName} who is searching in the Vancouver / Lower Mainland area.
+    const prompt = `You are evaluating an apartment listing for ${userName} who is searching in the ${locationConfig.regionName} area.
 
 LISTING DETAILS:
 - Title: ${listing.title}
