@@ -106,12 +106,13 @@ export function ViewingModeDialog({
     const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
     const [showChecklist, setShowChecklist] = useState(true);
 
-    // Voice recording state
+    // Voice recording state (uses Web Speech API for browser-side transcription)
     const [isRecording, setIsRecording] = useState(false);
     const [recordingTime, setRecordingTime] = useState(0);
+    const [liveTranscript, setLiveTranscript] = useState("");
     const [transcribing, setTranscribing] = useState(false);
-    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-    const audioChunksRef = useRef<Blob[]>([]);
+    const recognitionRef = useRef<SpeechRecognition | null>(null);
+    const transcriptRef = useRef("");
     const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(
         null,
     );
@@ -145,11 +146,8 @@ export function ViewingModeDialog({
     // Cleanup recording on unmount/close
     useEffect(() => {
         return () => {
-            if (
-                mediaRecorderRef.current &&
-                mediaRecorderRef.current.state !== "inactive"
-            ) {
-                mediaRecorderRef.current.stop();
+            if (recognitionRef.current) {
+                recognitionRef.current.abort();
             }
             if (recordingTimerRef.current) {
                 clearInterval(recordingTimerRef.current);
@@ -166,78 +164,101 @@ export function ViewingModeDialog({
         });
     }
 
-    async function startRecording() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                audio: true,
-            });
-            const mediaRecorder = new MediaRecorder(stream);
-            mediaRecorderRef.current = mediaRecorder;
-            audioChunksRef.current = [];
-
-            mediaRecorder.ondataavailable = (e) => {
-                if (e.data.size > 0) {
-                    audioChunksRef.current.push(e.data);
-                }
-            };
-
-            mediaRecorder.start();
-            setIsRecording(true);
-            setRecordingTime(0);
-            recordingTimerRef.current = setInterval(() => {
-                setRecordingTime((t) => t + 1);
-            }, 1000);
-        } catch {
+    function startRecording() {
+        const SpeechRecognition =
+            window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
             toast.error(
-                "Could not access microphone. Please check permissions.",
+                "Speech recognition not supported in this browser. Try Chrome.",
             );
+            return;
         }
-    }
 
-    async function stopRecording() {
-        if (!mediaRecorderRef.current) return;
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = "en-US";
 
-        return new Promise<Blob>((resolve) => {
-            mediaRecorderRef.current!.onstop = () => {
-                const blob = new Blob(audioChunksRef.current, {
-                    type: "audio/webm",
-                });
-                // Stop all tracks
-                mediaRecorderRef.current?.stream
-                    .getTracks()
-                    .forEach((t) => t.stop());
-                resolve(blob);
-            };
-            mediaRecorderRef.current!.stop();
+        transcriptRef.current = "";
+        setLiveTranscript("");
+
+        recognition.onresult = (event: SpeechRecognitionEvent) => {
+            let final = "";
+            let interim = "";
+            for (let i = 0; i < event.results.length; i++) {
+                const result = event.results[i];
+                if (result.isFinal) {
+                    final += result[0].transcript + " ";
+                } else {
+                    interim += result[0].transcript;
+                }
+            }
+            transcriptRef.current = final;
+            setLiveTranscript(final + interim);
+        };
+
+        recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+            if (event.error !== "aborted") {
+                toast.error(`Speech recognition error: ${event.error}`);
+            }
             setIsRecording(false);
             if (recordingTimerRef.current) {
                 clearInterval(recordingTimerRef.current);
                 recordingTimerRef.current = null;
             }
-        });
+        };
+
+        recognition.onend = () => {
+            // Auto-restart if still recording (speech recognition can time out)
+            if (isRecording && recognitionRef.current === recognition) {
+                try {
+                    recognition.start();
+                } catch {
+                    // already started or stopped
+                }
+            }
+        };
+
+        recognitionRef.current = recognition;
+        recognition.start();
+        setIsRecording(true);
+        setRecordingTime(0);
+        recordingTimerRef.current = setInterval(() => {
+            setRecordingTime((t) => t + 1);
+        }, 1000);
     }
 
     async function handleStopAndTranscribe() {
-        const audioBlob = await stopRecording();
-        if (!audioBlob || audioBlob.size === 0) {
-            toast.error("No audio recorded");
+        // Stop speech recognition
+        if (recognitionRef.current) {
+            recognitionRef.current.abort();
+            recognitionRef.current = null;
+        }
+        setIsRecording(false);
+        if (recordingTimerRef.current) {
+            clearInterval(recordingTimerRef.current);
+            recordingTimerRef.current = null;
+        }
+
+        const transcript = transcriptRef.current.trim();
+        if (!transcript) {
+            toast.error(
+                "No speech detected. Try speaking louder or closer to the mic.",
+            );
             return;
         }
 
         setTranscribing(true);
         try {
-            const formData = new FormData();
-            formData.append("audio", audioBlob, "recording.webm");
-            formData.append("listingTitle", listingTitle);
-
             const res = await fetch("/api/viewings/transcribe", {
                 method: "POST",
-                body: formData,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ transcript, listingTitle }),
             });
 
             if (!res.ok) {
                 const err = await res.json();
-                throw new Error(err.error || "Transcription failed");
+                throw new Error(err.error || "Failed to generate notes");
             }
 
             const data = await res.json();
@@ -253,10 +274,11 @@ export function ViewingModeDialog({
                 setNewTitle("");
                 setNewNotes(aiNotes);
             }
+            setLiveTranscript("");
             toast.success("Voice notes generated");
         } catch (err) {
             toast.error(
-                err instanceof Error ? err.message : "Failed to transcribe",
+                err instanceof Error ? err.message : "Failed to generate notes",
             );
         } finally {
             setTranscribing(false);
@@ -430,8 +452,8 @@ export function ViewingModeDialog({
                             Voice Notes
                         </p>
                         <p className="text-xs text-muted-foreground">
-                            Record your thoughts while walking through — AI will
-                            generate concise notes.
+                            Speak your thoughts while walking through — AI will
+                            clean them into concise notes.
                         </p>
                         <div className="flex items-center gap-2">
                             {isRecording ? (
@@ -443,7 +465,7 @@ export function ViewingModeDialog({
                                         disabled={transcribing}
                                     >
                                         <MicOff className="h-3.5 w-3.5 mr-1.5" />
-                                        Stop
+                                        Stop & Generate
                                     </Button>
                                     <span className="text-sm font-mono text-red-600 dark:text-red-400 animate-pulse">
                                         {formatRecordingTime(recordingTime)}
@@ -465,6 +487,14 @@ export function ViewingModeDialog({
                                 </Button>
                             )}
                         </div>
+                        {/* Live transcript preview */}
+                        {(isRecording || liveTranscript) && liveTranscript && (
+                            <div className="rounded bg-muted/50 p-2 max-h-24 overflow-y-auto">
+                                <p className="text-xs text-muted-foreground italic">
+                                    {liveTranscript}
+                                </p>
+                            </div>
+                        )}
                     </div>
 
                     {/* Checklist */}
