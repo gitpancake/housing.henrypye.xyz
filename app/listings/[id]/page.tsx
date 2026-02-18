@@ -46,6 +46,7 @@ import { format } from "date-fns";
 import dynamic from "next/dynamic";
 import { PageWrapper } from "@/components/layout/page-wrapper";
 import { ExpenseCalculator } from "@/components/listings/expense-calculator";
+import { ViewingModeDialog } from "@/components/calendar/viewing-mode-dialog";
 import { calculateTakeHome } from "@/lib/tax";
 
 const ListingMap = dynamic(
@@ -128,6 +129,10 @@ export default function ListingDetailPage() {
     const [deleting, setDeleting] = useState(false);
     const [creatingCallTodo, setCreatingCallTodo] = useState(false);
     const [viewings, setViewings] = useState<ViewingItem[]>([]);
+    const [selectedViewingId, setSelectedViewingId] = useState<string | null>(
+        null,
+    );
+    const [viewingModeOpen, setViewingModeOpen] = useState(false);
     const [combinedMonthlyTakeHome, setCombinedMonthlyTakeHome] = useState<
         number | null
     >(null);
@@ -656,9 +661,14 @@ export default function ListingDetailPage() {
                                                 ).getTime(),
                                         )
                                         .map((v) => (
-                                            <div
+                                            <button
                                                 key={v.id}
-                                                className={`flex items-center justify-between rounded-lg border p-3 ${
+                                                type="button"
+                                                onClick={() => {
+                                                    setSelectedViewingId(v.id);
+                                                    setViewingModeOpen(true);
+                                                }}
+                                                className={`w-full flex items-center justify-between rounded-lg border p-3 text-left hover:bg-muted/50 transition-colors cursor-pointer ${
                                                     v.status === "CANCELLED"
                                                         ? "opacity-50"
                                                         : ""
@@ -695,7 +705,7 @@ export default function ListingDetailPage() {
                                                         {v.status}
                                                     </Badge>
                                                 )}
-                                            </div>
+                                            </button>
                                         ))}
                                 </div>
                             )}
@@ -728,6 +738,12 @@ export default function ListingDetailPage() {
                     )}
                 </div>
             </div>
+            <ViewingModeDialog
+                open={viewingModeOpen}
+                onClose={() => setViewingModeOpen(false)}
+                viewingId={selectedViewingId}
+                listingTitle={listing?.title || ""}
+            />
         </PageWrapper>
     );
 }
