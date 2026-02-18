@@ -18,6 +18,8 @@ import {
     StickyNote,
     Camera,
     ImageIcon,
+    ChevronDown,
+    ChevronUp,
 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -74,6 +76,7 @@ export function ViewingPreviewDialog({
     viewing,
 }: ViewingPreviewDialogProps) {
     const [viewingNotes, setViewingNotes] = useState<ViewingNoteData[]>([]);
+    const [expandedNoteId, setExpandedNoteId] = useState<string | null>(null);
 
     const fetchViewingNotes = useCallback(async () => {
         if (!viewing) return;
@@ -93,6 +96,7 @@ export function ViewingPreviewDialog({
         }
         if (!open) {
             setViewingNotes([]);
+            setExpandedNoteId(null);
         }
     }, [open, viewing, fetchViewingNotes]);
 
@@ -164,26 +168,73 @@ export function ViewingPreviewDialog({
                                 {viewingNotes.map((note) => {
                                     const photos =
                                         (note.photos as string[]) || [];
+                                    const isExpanded =
+                                        expandedNoteId === note.id;
                                     return (
                                         <div
                                             key={note.id}
-                                            className="rounded-lg border p-2.5 space-y-1.5"
+                                            className="rounded-lg border overflow-hidden"
                                         >
-                                            <p className="text-sm font-medium">
-                                                {note.title}
-                                            </p>
-                                            {note.notes && (
-                                                <p className="text-xs text-muted-foreground line-clamp-2">
-                                                    {note.notes}
-                                                </p>
-                                            )}
-                                            {photos.length > 0 && (
-                                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                                    <ImageIcon className="h-3 w-3" />
-                                                    {photos.length} photo
-                                                    {photos.length !== 1
-                                                        ? "s"
-                                                        : ""}
+                                            <button
+                                                type="button"
+                                                className="w-full flex items-center justify-between p-2.5 hover:bg-muted/50 transition-colors"
+                                                onClick={() =>
+                                                    setExpandedNoteId(
+                                                        isExpanded
+                                                            ? null
+                                                            : note.id,
+                                                    )
+                                                }
+                                            >
+                                                <div className="text-left">
+                                                    <p className="text-sm font-medium">
+                                                        {note.title}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {photos.length} photo
+                                                        {photos.length !== 1
+                                                            ? "s"
+                                                            : ""}
+                                                        {note.notes &&
+                                                            " · has notes"}
+                                                    </p>
+                                                </div>
+                                                {isExpanded ? (
+                                                    <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
+                                                ) : (
+                                                    <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                                                )}
+                                            </button>
+
+                                            {isExpanded && (
+                                                <div className="px-2.5 pb-2.5 space-y-2">
+                                                    <Separator />
+                                                    {note.notes && (
+                                                        <p className="text-sm whitespace-pre-wrap bg-muted/50 rounded-lg p-2">
+                                                            {note.notes}
+                                                        </p>
+                                                    )}
+                                                    {photos.length > 0 && (
+                                                        <div className="grid grid-cols-3 gap-1.5">
+                                                            {photos.map(
+                                                                (url, i) => (
+                                                                    <div
+                                                                        key={i}
+                                                                        className="rounded-lg overflow-hidden border"
+                                                                    >
+                                                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                                        <img
+                                                                            src={
+                                                                                url
+                                                                            }
+                                                                            alt={`${note.title} photo ${i + 1}`}
+                                                                            className="h-20 w-full object-cover"
+                                                                        />
+                                                                    </div>
+                                                                ),
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
                                         </div>

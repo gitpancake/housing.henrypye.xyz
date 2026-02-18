@@ -120,7 +120,11 @@ export function CalendarView({
     const [viewings, setViewings] = useState<ViewingData[]>(initialViewings);
     const [todos, setTodos] = useState<TodoData[]>(initialTodos);
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [viewMode, setViewMode] = useState<"month" | "week">("month");
+    const [viewMode, setViewMode] = useState<"month" | "week">(
+        typeof window !== "undefined" && window.innerWidth < 768
+            ? "week"
+            : "month",
+    );
     const [dialogOpen, setDialogOpen] = useState(false);
     const [todoDialogOpen, setTodoDialogOpen] = useState(false);
     const [selectedViewing, setSelectedViewing] = useState<ViewingData | null>(
