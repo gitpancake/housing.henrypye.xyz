@@ -328,15 +328,49 @@ export default function ListingDetailPage() {
                             <h1 className="text-2xl font-bold">
                                 {listing.title}
                             </h1>
-                            <Badge
-                                variant={
-                                    listing.status === "FAVORITE"
-                                        ? "default"
-                                        : "secondary"
-                                }
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="shrink-0"
+                                onClick={async () => {
+                                    const newStatus =
+                                        listing.status === "FAVORITE"
+                                            ? "ACTIVE"
+                                            : "FAVORITE";
+                                    const res = await fetch(
+                                        `/api/listings/${id}`,
+                                        {
+                                            method: "PUT",
+                                            headers: {
+                                                "Content-Type":
+                                                    "application/json",
+                                            },
+                                            body: JSON.stringify({
+                                                status: newStatus,
+                                            }),
+                                        },
+                                    );
+                                    if (res.ok) {
+                                        setListing({
+                                            ...listing,
+                                            status: newStatus,
+                                        });
+                                        toast.success(
+                                            newStatus === "FAVORITE"
+                                                ? "Added to favourites"
+                                                : "Removed from favourites",
+                                        );
+                                    }
+                                }}
                             >
-                                {listing.status}
-                            </Badge>
+                                <Star
+                                    className={`h-5 w-5 ${
+                                        listing.status === "FAVORITE"
+                                            ? "fill-yellow-400 text-yellow-400"
+                                            : "text-muted-foreground"
+                                    }`}
+                                />
+                            </Button>
                         </div>
                         <p className="text-sm text-muted-foreground mt-1">
                             Added by {listing.addedByUser.displayName} on{" "}
