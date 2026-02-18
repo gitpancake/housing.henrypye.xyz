@@ -36,6 +36,11 @@ npx prisma db seed   # Seed default users
 | `lib/supabase.ts` | Supabase client for storage |
 | `lib/tax.ts` | Take-home pay calculator using brackets from location config |
 | `prisma/schema.prisma` | Complete data model |
+| `components/calendar/viewing-mode-dialog.tsx` | In-viewing experience: checklist, voice recording with AI notes, unit notes, photos |
+| `components/compare/compare-view.tsx` | Side-by-side listing comparison (desktop only) |
+| `components/dashboard/viewing-day-banner.tsx` | Viewing day dashboard with schedule, directions, key details |
+| `components/listings/expense-calculator.tsx` | Per-listing monthly expense estimator with editable Vancouver-area defaults |
+| `app/api/viewings/transcribe/route.ts` | Voice recording → AI-generated viewing notes via Claude |
 
 ## Data Model (key models)
 
@@ -47,6 +52,14 @@ npx prisma db seed   # Seed default users
 - **Todo** — Tasks with scheduling, duration, location
 - **AreaRecommendation** — AI-generated neighbourhood suggestions per user
 
+## Viewing Day Features
+
+- **Viewing Checklist** — 14-item checklist in viewing mode (water pressure, light, outlets, noise, cell signal, etc.) with check-off progress tracking
+- **Voice Notes** — Record audio during viewings; sent to Claude API which generates concise bullet-point notes; auto-populates the unit notes form
+- **Viewing Day Dashboard** — Banner on the main dashboard when viewings are scheduled today/tomorrow; shows schedule, listing details, scores, and Google Maps directions between viewings
+- **Side-by-Side Comparison** — `/compare` page (desktop only) to compare up to 4 listings across all attributes, scores, AI summaries, and viewing notes
+- **Expense Calculator** — Per-listing monthly cost estimator on listing detail pages; Vancouver-area defaults (hydro, internet, insurance, transit, parking, laundry) with inline editing; shows % of combined take-home pay
+
 ## Conventions
 
 - All API routes check `getSession()` and return 401 if unauthorized
@@ -55,3 +68,4 @@ npx prisma db seed   # Seed default users
 - Form handling uses controlled state (not react-hook-form in most components)
 - Map components are dynamically imported with `{ ssr: false }` to avoid Leaflet SSR issues
 - Mobile-first responsive design with Tailwind breakpoints
+- Voice recording uses browser MediaRecorder API (audio/webm) — requires HTTPS or localhost

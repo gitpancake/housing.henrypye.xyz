@@ -45,6 +45,8 @@ import Link from "next/link";
 import { format } from "date-fns";
 import dynamic from "next/dynamic";
 import { PageWrapper } from "@/components/layout/page-wrapper";
+import { ExpenseCalculator } from "@/components/listings/expense-calculator";
+import { calculateTakeHome } from "@/lib/tax";
 
 const ListingMap = dynamic(
     () => import("@/components/map/listing-map-single"),
@@ -93,6 +95,8 @@ interface Listing {
     petFriendly: boolean | null;
     squareFeet: number | null;
     contactPhone: string | null;
+    parking: string | null;
+    laundry: string | null;
     photos: string[];
     status: string;
     notes: string | null;
@@ -124,6 +128,9 @@ export default function ListingDetailPage() {
     const [deleting, setDeleting] = useState(false);
     const [creatingCallTodo, setCreatingCallTodo] = useState(false);
     const [viewings, setViewings] = useState<ViewingItem[]>([]);
+    const [combinedMonthlyTakeHome, setCombinedMonthlyTakeHome] = useState<
+        number | null
+    >(null);
 
     const id = params.id as string;
 
@@ -147,9 +154,27 @@ export default function ListingDetailPage() {
             });
     }
 
+    function fetchBudget() {
+        fetch("/api/budget")
+            .then((res) => res.json())
+            .then((data) => {
+                const users = data.users || [];
+                let total = 0;
+                for (const u of users) {
+                    if (u.preferences?.annualSalary) {
+                        total += calculateTakeHome(
+                            u.preferences.annualSalary,
+                        ).monthlyTakeHome;
+                    }
+                }
+                setCombinedMonthlyTakeHome(total > 0 ? total : null);
+            });
+    }
+
     useEffect(() => {
         fetchListing();
         fetchViewings();
+        fetchBudget();
     }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
     async function handleEvaluate() {
@@ -676,6 +701,17 @@ export default function ListingDetailPage() {
                             )}
                         </CardContent>
                     </Card>
+
+                    {/* Expense Calculator */}
+                    <ExpenseCalculator
+                        rent={listing.price}
+                        monthlyTakeHome={combinedMonthlyTakeHome}
+                        hasParking={
+                            !!listing.parking &&
+                            listing.parking.toLowerCase() !== "no" &&
+                            listing.parking.toLowerCase() !== "none"
+                        }
+                    />
 
                     {/* Notes */}
                     {listing.notes && (

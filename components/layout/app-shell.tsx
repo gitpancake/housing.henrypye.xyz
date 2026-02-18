@@ -17,6 +17,7 @@ import {
     LogOut,
     Menu,
     Plus,
+    Columns3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +35,7 @@ const NAV_ITEMS = [
     { href: "/listings", label: "Listings", icon: List },
     { href: "/map", label: "Map", icon: MapIcon },
     { href: "/calendar", label: "Calendar", icon: CalendarDays },
+    { href: "/compare", label: "Compare", icon: Columns3 },
     { href: "/todos", label: "Tasks", icon: CheckSquare },
     { href: "/budget", label: "Budget", icon: DollarSign },
     { href: "/profile", label: "Profile", icon: User },

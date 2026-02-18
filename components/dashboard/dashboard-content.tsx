@@ -17,6 +17,7 @@ import {
     RefreshCw,
 } from "lucide-react";
 import { AreaRecommendations } from "./area-recommendations";
+import { ViewingDayBanner } from "./viewing-day-banner";
 
 interface Score {
     id: string;
@@ -71,6 +72,30 @@ interface UserStatus {
     preferencesComplete: boolean;
 }
 
+interface UpcomingViewing {
+    id: string;
+    scheduledAt: string | Date;
+    notes: string | null;
+    status: string;
+    listing: {
+        id: string;
+        title: string;
+        address: string;
+        price: number | null;
+        bedrooms: number | null;
+        bathrooms: number | null;
+        neighbourhood: string | null;
+        url: string;
+        photos: unknown;
+        scores: {
+            aiOverallScore: number | null;
+            manualOverrideScore: number | null;
+            user: { id: string; displayName: string };
+        }[];
+    };
+    user: { id: string; displayName: string };
+}
+
 interface DashboardContentProps {
     listings: Listing[];
     users: { id: string; username: string; displayName: string }[];
@@ -80,6 +105,7 @@ interface DashboardContentProps {
     dismissedAreas: DismissedAreaData[];
     areaNotes: AreaNoteData[];
     userStatuses: UserStatus[];
+    upcomingViewings: UpcomingViewing[];
 }
 
 function getEffectiveScore(score: Score): number | null {
@@ -102,6 +128,7 @@ export function DashboardContent({
     dismissedAreas,
     areaNotes,
     userStatuses,
+    upcomingViewings,
 }: DashboardContentProps) {
     const [generatingRecs, setGeneratingRecs] = useState(false);
     const activeListings = listings.filter(
@@ -246,6 +273,9 @@ export function DashboardContent({
                     );
                 })}
             </div>
+
+            {/* Viewing Day Dashboard */}
+            <ViewingDayBanner viewings={upcomingViewings} />
 
             {/* Setup status — show when not everyone has prefs or no recs yet */}
             {(!allPrefsComplete || !hasRecs) && (

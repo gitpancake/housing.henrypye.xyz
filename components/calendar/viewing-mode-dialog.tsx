@@ -1,482 +1,852 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Separator } from "@/components/ui/separator"
-import { toast } from "sonner"
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
+import { toast } from "sonner";
 import {
-  Camera,
-  Plus,
-  X,
-  Loader2,
-  ChevronDown,
-  ChevronUp,
-  Trash2,
-  ImageIcon,
-  StickyNote,
-} from "lucide-react"
+    Camera,
+    Plus,
+    Loader2,
+    ChevronDown,
+    ChevronUp,
+    Trash2,
+    ImageIcon,
+    StickyNote,
+    ClipboardCheck,
+    CheckSquare,
+    Square,
+    Mic,
+    MicOff,
+    Sparkles,
+} from "lucide-react";
 
 interface ViewingNoteData {
-  id: string
-  viewingId: string
-  title: string
-  notes: string | null
-  photos: string[]
-  createdAt: string
+    id: string;
+    viewingId: string;
+    title: string;
+    notes: string | null;
+    photos: string[];
+    createdAt: string;
 }
 
 interface ViewingModeDialogProps {
-  open: boolean
-  onClose: () => void
-  viewingId: string | null
-  listingTitle: string
+    open: boolean;
+    onClose: () => void;
+    viewingId: string | null;
+    listingTitle: string;
 }
 
+// Default viewing checklist items
+const DEFAULT_CHECKLIST = [
+    { id: "water_pressure", label: "Water pressure (kitchen + bathroom)" },
+    { id: "natural_light", label: "Natural light & window direction" },
+    { id: "outlets", label: "Number of outlets per room" },
+    { id: "closet_space", label: "Closet & storage space" },
+    { id: "noise", label: "Noise levels (street, neighbours)" },
+    { id: "cell_signal", label: "Cell signal strength" },
+    { id: "appliances", label: "Appliances condition" },
+    { id: "walls_floors", label: "Walls, floors & ceiling condition" },
+    { id: "locks_security", label: "Locks & building security" },
+    { id: "laundry", label: "Laundry situation" },
+    { id: "heating_cooling", label: "Heating & cooling" },
+    { id: "pests", label: "Signs of pests or mould" },
+    { id: "parking", label: "Parking & bike storage" },
+    { id: "neighbours", label: "Building vibe & common areas" },
+];
+
 export function ViewingModeDialog({
-  open,
-  onClose,
-  viewingId,
-  listingTitle,
+    open,
+    onClose,
+    viewingId,
+    listingTitle,
 }: ViewingModeDialogProps) {
-  const [notes, setNotes] = useState<ViewingNoteData[]>([])
-  const [loading, setLoading] = useState(false)
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [expandedNoteId, setExpandedNoteId] = useState<string | null>(null)
+    const [notes, setNotes] = useState<ViewingNoteData[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [showAddForm, setShowAddForm] = useState(false);
+    const [expandedNoteId, setExpandedNoteId] = useState<string | null>(null);
 
-  // Add form state
-  const [newTitle, setNewTitle] = useState("")
-  const [newNotes, setNewNotes] = useState("")
-  const [saving, setSaving] = useState(false)
+    // Add form state
+    const [newTitle, setNewTitle] = useState("");
+    const [newNotes, setNewNotes] = useState("");
+    const [saving, setSaving] = useState(false);
 
-  // Edit state
-  const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
-  const [editTitle, setEditTitle] = useState("")
-  const [editNotes, setEditNotes] = useState("")
-  const [editSaving, setEditSaving] = useState(false)
+    // Edit state
+    const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+    const [editTitle, setEditTitle] = useState("");
+    const [editNotes, setEditNotes] = useState("");
+    const [editSaving, setEditSaving] = useState(false);
 
-  // Photo upload state
-  const [uploadingNoteId, setUploadingNoteId] = useState<string | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const activeNoteIdRef = useRef<string | null>(null)
+    // Photo upload state
+    const [uploadingNoteId, setUploadingNoteId] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const activeNoteIdRef = useRef<string | null>(null);
 
-  const fetchNotes = useCallback(async () => {
-    if (!viewingId) return
-    setLoading(true)
-    try {
-      const res = await fetch(`/api/viewings/${viewingId}/notes`)
-      if (!res.ok) return
-      const data = await res.json()
-      setNotes(data.notes || [])
-    } catch {
-      // silently fail
-    } finally {
-      setLoading(false)
-    }
-  }, [viewingId])
+    // Checklist state
+    const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
+    const [showChecklist, setShowChecklist] = useState(true);
 
-  useEffect(() => {
-    if (open && viewingId) {
-      fetchNotes()
-      setShowAddForm(false)
-      setExpandedNoteId(null)
-      setEditingNoteId(null)
-    }
-  }, [open, viewingId, fetchNotes])
+    // Voice recording state
+    const [isRecording, setIsRecording] = useState(false);
+    const [recordingTime, setRecordingTime] = useState(0);
+    const [transcribing, setTranscribing] = useState(false);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const audioChunksRef = useRef<Blob[]>([]);
+    const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(
+        null,
+    );
 
-  async function handleAddNote() {
-    if (!viewingId || !newTitle.trim()) {
-      toast.error("Please enter a title")
-      return
-    }
+    const fetchNotes = useCallback(async () => {
+        if (!viewingId) return;
+        setLoading(true);
+        try {
+            const res = await fetch(`/api/viewings/${viewingId}/notes`);
+            if (!res.ok) return;
+            const data = await res.json();
+            setNotes(data.notes || []);
+        } catch {
+            // silently fail
+        } finally {
+            setLoading(false);
+        }
+    }, [viewingId]);
 
-    setSaving(true)
-    try {
-      const res = await fetch(`/api/viewings/${viewingId}/notes`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: newTitle.trim(), notes: newNotes.trim() || null }),
-      })
-      if (!res.ok) throw new Error()
-      toast.success("Unit added")
-      setNewTitle("")
-      setNewNotes("")
-      setShowAddForm(false)
-      await fetchNotes()
-    } catch {
-      toast.error("Failed to add unit")
-    } finally {
-      setSaving(false)
-    }
-  }
+    useEffect(() => {
+        if (open && viewingId) {
+            fetchNotes();
+            setShowAddForm(false);
+            setExpandedNoteId(null);
+            setEditingNoteId(null);
+            setCheckedItems(new Set());
+            setShowChecklist(true);
+        }
+    }, [open, viewingId, fetchNotes]);
 
-  async function handleUpdateNote(noteId: string) {
-    if (!viewingId || !editTitle.trim()) {
-      toast.error("Please enter a title")
-      return
-    }
-
-    setEditSaving(true)
-    try {
-      const res = await fetch(`/api/viewings/${viewingId}/notes/${noteId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: editTitle.trim(), notes: editNotes.trim() || null }),
-      })
-      if (!res.ok) throw new Error()
-      toast.success("Unit updated")
-      setEditingNoteId(null)
-      await fetchNotes()
-    } catch {
-      toast.error("Failed to update unit")
-    } finally {
-      setEditSaving(false)
-    }
-  }
-
-  async function handleDeleteNote(noteId: string) {
-    if (!viewingId) return
-    try {
-      const res = await fetch(`/api/viewings/${viewingId}/notes/${noteId}`, {
-        method: "DELETE",
-      })
-      if (!res.ok) throw new Error()
-      toast.success("Unit removed")
-      await fetchNotes()
-    } catch {
-      toast.error("Failed to delete unit")
-    }
-  }
-
-  function triggerPhotoUpload(noteId: string) {
-    activeNoteIdRef.current = noteId
-    fileInputRef.current?.click()
-  }
-
-  async function handlePhotoUpload(files: FileList) {
-    const noteId = activeNoteIdRef.current
-    if (!viewingId || !noteId || files.length === 0) return
-
-    setUploadingNoteId(noteId)
-
-    const formData = new FormData()
-    for (const file of Array.from(files)) {
-      formData.append("photos", file)
-    }
-
-    try {
-      const res = await fetch(
-        `/api/viewings/${viewingId}/notes/${noteId}/photos`,
-        { method: "POST", body: formData }
-      )
-      if (!res.ok) {
-        const err = await res.json()
-        throw new Error(err.error || "Upload failed")
-      }
-      toast.success(`${files.length} photo${files.length > 1 ? "s" : ""} uploaded`)
-      await fetchNotes()
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to upload photos")
-    } finally {
-      setUploadingNoteId(null)
-      if (fileInputRef.current) fileInputRef.current.value = ""
-    }
-  }
-
-  function startEditing(note: ViewingNoteData) {
-    setEditingNoteId(note.id)
-    setEditTitle(note.title)
-    setEditNotes(note.notes || "")
-    setExpandedNoteId(note.id)
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-lg">
-            <StickyNote className="h-5 w-5" />
-            Viewing Mode
-          </DialogTitle>
-          <p className="text-sm text-muted-foreground">{listingTitle}</p>
-        </DialogHeader>
-
-        {/* Hidden file input for photo uploads */}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          multiple
-          className="hidden"
-          onChange={(e) => {
-            if (e.target.files && e.target.files.length > 0) {
-              handlePhotoUpload(e.target.files)
+    // Cleanup recording on unmount/close
+    useEffect(() => {
+        return () => {
+            if (
+                mediaRecorderRef.current &&
+                mediaRecorderRef.current.state !== "inactive"
+            ) {
+                mediaRecorderRef.current.stop();
             }
-          }}
-        />
+            if (recordingTimerRef.current) {
+                clearInterval(recordingTimerRef.current);
+            }
+        };
+    }, []);
 
-        <div className="space-y-3">
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-            </div>
-          ) : notes.length === 0 && !showAddForm ? (
-            <div className="text-center py-6">
-              <p className="text-sm text-muted-foreground mb-3">
-                No units recorded yet. Add your first unit to start taking notes and photos.
-              </p>
-            </div>
-          ) : (
-            /* Existing unit notes */
-            notes.map((note) => {
-              const isExpanded = expandedNoteId === note.id
-              const isEditing = editingNoteId === note.id
-              const isUploading = uploadingNoteId === note.id
-              const photos = (note.photos as string[]) || []
+    function toggleCheckItem(id: string) {
+        setCheckedItems((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    }
 
-              return (
-                <div key={note.id} className="rounded-lg border">
-                  {/* Header — always visible */}
-                  <button
-                    type="button"
-                    className="w-full flex items-center justify-between p-3 hover:bg-muted/50 transition-colors"
-                    onClick={() =>
-                      setExpandedNoteId(isExpanded ? null : note.id)
-                    }
-                  >
-                    <div className="text-left">
-                      <p className="font-medium text-sm">{note.title}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {photos.length} photo{photos.length !== 1 ? "s" : ""}
-                        {note.notes && " · has notes"}
-                      </p>
-                    </div>
-                    {isExpanded ? (
-                      <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </button>
+    async function startRecording() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                audio: true,
+            });
+            const mediaRecorder = new MediaRecorder(stream);
+            mediaRecorderRef.current = mediaRecorder;
+            audioChunksRef.current = [];
 
-                  {/* Expanded content */}
-                  {isExpanded && (
-                    <div className="px-3 pb-3 space-y-3">
-                      <Separator />
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) {
+                    audioChunksRef.current.push(e.data);
+                }
+            };
 
-                      {isEditing ? (
-                        /* Edit form */
-                        <div className="space-y-3">
-                          <div className="space-y-1">
-                            <Label className="text-xs">Title</Label>
-                            <Input
-                              value={editTitle}
-                              onChange={(e) => setEditTitle(e.target.value)}
-                              placeholder="e.g. Unit 305 - 2br 2ba"
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs">Notes</Label>
-                            <Textarea
-                              value={editNotes}
-                              onChange={(e) => setEditNotes(e.target.value)}
-                              placeholder="Your observations..."
-                              rows={3}
-                            />
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              onClick={() => handleUpdateNote(note.id)}
-                              disabled={editSaving}
-                            >
-                              {editSaving ? "Saving..." : "Save"}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setEditingNoteId(null)}
-                            >
-                              Cancel
-                            </Button>
-                          </div>
-                        </div>
-                      ) : (
-                        /* Read view */
-                        <>
-                          {note.notes && (
-                            <p className="text-sm whitespace-pre-wrap bg-muted/50 rounded-lg p-2">
-                              {note.notes}
-                            </p>
-                          )}
+            mediaRecorder.start();
+            setIsRecording(true);
+            setRecordingTime(0);
+            recordingTimerRef.current = setInterval(() => {
+                setRecordingTime((t) => t + 1);
+            }, 1000);
+        } catch {
+            toast.error(
+                "Could not access microphone. Please check permissions.",
+            );
+        }
+    }
 
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => startEditing(note)}
-                            >
-                              Edit
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button size="sm" variant="destructive">
-                                  <Trash2 className="h-3 w-3 mr-1" />
-                                  Delete
+    async function stopRecording() {
+        if (!mediaRecorderRef.current) return;
+
+        return new Promise<Blob>((resolve) => {
+            mediaRecorderRef.current!.onstop = () => {
+                const blob = new Blob(audioChunksRef.current, {
+                    type: "audio/webm",
+                });
+                // Stop all tracks
+                mediaRecorderRef.current?.stream
+                    .getTracks()
+                    .forEach((t) => t.stop());
+                resolve(blob);
+            };
+            mediaRecorderRef.current!.stop();
+            setIsRecording(false);
+            if (recordingTimerRef.current) {
+                clearInterval(recordingTimerRef.current);
+                recordingTimerRef.current = null;
+            }
+        });
+    }
+
+    async function handleStopAndTranscribe() {
+        const audioBlob = await stopRecording();
+        if (!audioBlob || audioBlob.size === 0) {
+            toast.error("No audio recorded");
+            return;
+        }
+
+        setTranscribing(true);
+        try {
+            const formData = new FormData();
+            formData.append("audio", audioBlob, "recording.webm");
+            formData.append("listingTitle", listingTitle);
+
+            const res = await fetch("/api/viewings/transcribe", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || "Transcription failed");
+            }
+
+            const data = await res.json();
+            const aiNotes = data.notes as string;
+
+            // If add form is open, append to notes. Otherwise pre-fill a new unit.
+            if (showAddForm) {
+                setNewNotes((prev) =>
+                    prev ? prev + "\n\n" + aiNotes : aiNotes,
+                );
+            } else {
+                setShowAddForm(true);
+                setNewTitle("");
+                setNewNotes(aiNotes);
+            }
+            toast.success("Voice notes generated");
+        } catch (err) {
+            toast.error(
+                err instanceof Error ? err.message : "Failed to transcribe",
+            );
+        } finally {
+            setTranscribing(false);
+        }
+    }
+
+    function formatRecordingTime(seconds: number) {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return `${m}:${s.toString().padStart(2, "0")}`;
+    }
+
+    async function handleAddNote() {
+        if (!viewingId || !newTitle.trim()) {
+            toast.error("Please enter a title");
+            return;
+        }
+
+        setSaving(true);
+        try {
+            const res = await fetch(`/api/viewings/${viewingId}/notes`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    title: newTitle.trim(),
+                    notes: newNotes.trim() || null,
+                }),
+            });
+            if (!res.ok) throw new Error();
+            toast.success("Unit added");
+            setNewTitle("");
+            setNewNotes("");
+            setShowAddForm(false);
+            await fetchNotes();
+        } catch {
+            toast.error("Failed to add unit");
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    async function handleUpdateNote(noteId: string) {
+        if (!viewingId || !editTitle.trim()) {
+            toast.error("Please enter a title");
+            return;
+        }
+
+        setEditSaving(true);
+        try {
+            const res = await fetch(
+                `/api/viewings/${viewingId}/notes/${noteId}`,
+                {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        title: editTitle.trim(),
+                        notes: editNotes.trim() || null,
+                    }),
+                },
+            );
+            if (!res.ok) throw new Error();
+            toast.success("Unit updated");
+            setEditingNoteId(null);
+            await fetchNotes();
+        } catch {
+            toast.error("Failed to update unit");
+        } finally {
+            setEditSaving(false);
+        }
+    }
+
+    async function handleDeleteNote(noteId: string) {
+        if (!viewingId) return;
+        try {
+            const res = await fetch(
+                `/api/viewings/${viewingId}/notes/${noteId}`,
+                {
+                    method: "DELETE",
+                },
+            );
+            if (!res.ok) throw new Error();
+            toast.success("Unit removed");
+            await fetchNotes();
+        } catch {
+            toast.error("Failed to delete unit");
+        }
+    }
+
+    function triggerPhotoUpload(noteId: string) {
+        activeNoteIdRef.current = noteId;
+        fileInputRef.current?.click();
+    }
+
+    async function handlePhotoUpload(files: FileList) {
+        const noteId = activeNoteIdRef.current;
+        if (!viewingId || !noteId || files.length === 0) return;
+
+        setUploadingNoteId(noteId);
+
+        const formData = new FormData();
+        for (const file of Array.from(files)) {
+            formData.append("photos", file);
+        }
+
+        try {
+            const res = await fetch(
+                `/api/viewings/${viewingId}/notes/${noteId}/photos`,
+                { method: "POST", body: formData },
+            );
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || "Upload failed");
+            }
+            toast.success(
+                `${files.length} photo${files.length > 1 ? "s" : ""} uploaded`,
+            );
+            await fetchNotes();
+        } catch (err) {
+            toast.error(
+                err instanceof Error ? err.message : "Failed to upload photos",
+            );
+        } finally {
+            setUploadingNoteId(null);
+            if (fileInputRef.current) fileInputRef.current.value = "";
+        }
+    }
+
+    function startEditing(note: ViewingNoteData) {
+        setEditingNoteId(note.id);
+        setEditTitle(note.title);
+        setEditNotes(note.notes || "");
+        setExpandedNoteId(note.id);
+    }
+
+    const checkedCount = checkedItems.size;
+    const totalChecklist = DEFAULT_CHECKLIST.length;
+
+    return (
+        <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+            <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-lg">
+                        <StickyNote className="h-5 w-5" />
+                        Viewing Mode
+                    </DialogTitle>
+                    <p className="text-sm text-muted-foreground">
+                        {listingTitle}
+                    </p>
+                </DialogHeader>
+
+                {/* Hidden file input for photo uploads */}
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                        if (e.target.files && e.target.files.length > 0) {
+                            handlePhotoUpload(e.target.files);
+                        }
+                    }}
+                />
+
+                <div className="space-y-3">
+                    {/* Voice Recording */}
+                    <div className="rounded-lg border p-3 space-y-2">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                            <Sparkles className="h-3 w-3" />
+                            Voice Notes
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                            Record your thoughts while walking through — AI will
+                            generate concise notes.
+                        </p>
+                        <div className="flex items-center gap-2">
+                            {isRecording ? (
+                                <>
+                                    <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        onClick={handleStopAndTranscribe}
+                                        disabled={transcribing}
+                                    >
+                                        <MicOff className="h-3.5 w-3.5 mr-1.5" />
+                                        Stop
+                                    </Button>
+                                    <span className="text-sm font-mono text-red-600 dark:text-red-400 animate-pulse">
+                                        {formatRecordingTime(recordingTime)}
+                                    </span>
+                                </>
+                            ) : transcribing ? (
+                                <Button size="sm" disabled>
+                                    <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                                    Generating notes...
                                 </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>
-                                    Delete &quot;{note.title}&quot;?
-                                  </AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    This will remove the unit and all its photos.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => handleDeleteNote(note.id)}
-                                  >
-                                    Delete
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        </>
-                      )}
-
-                      {/* Photos */}
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium flex items-center gap-1">
-                            <ImageIcon className="h-3 w-3" />
-                            Photos ({photos.length})
-                          </span>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            disabled={isUploading}
-                            onClick={() => triggerPhotoUpload(note.id)}
-                          >
-                            {isUploading ? (
-                              <>
-                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                                Uploading...
-                              </>
                             ) : (
-                              <>
-                                <Camera className="h-3 w-3 mr-1" />
-                                Add
-                              </>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={startRecording}
+                                >
+                                    <Mic className="h-3.5 w-3.5 mr-1.5" />
+                                    Record
+                                </Button>
                             )}
-                          </Button>
                         </div>
-
-                        {photos.length > 0 && (
-                          <div className="grid grid-cols-3 gap-1.5">
-                            {photos.map((url, i) => (
-                              <div
-                                key={i}
-                                className="rounded-lg overflow-hidden border"
-                              >
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
-                                  src={url}
-                                  alt={`${note.title} photo ${i + 1}`}
-                                  className="h-20 w-full object-cover"
-                                />
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
                     </div>
-                  )}
+
+                    {/* Checklist */}
+                    <div className="rounded-lg border">
+                        <button
+                            type="button"
+                            className="w-full flex items-center justify-between p-3 hover:bg-muted/50 transition-colors"
+                            onClick={() => setShowChecklist(!showChecklist)}
+                        >
+                            <div className="flex items-center gap-2">
+                                <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm font-medium">
+                                    Viewing Checklist
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                    {checkedCount}/{totalChecklist}
+                                </span>
+                            </div>
+                            {showChecklist ? (
+                                <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                            )}
+                        </button>
+                        {showChecklist && (
+                            <div className="px-3 pb-3 space-y-1">
+                                <Separator className="mb-2" />
+                                {DEFAULT_CHECKLIST.map((item) => {
+                                    const checked = checkedItems.has(item.id);
+                                    return (
+                                        <button
+                                            key={item.id}
+                                            type="button"
+                                            className="w-full flex items-center gap-2.5 py-1.5 px-1 rounded hover:bg-muted/50 transition-colors text-left"
+                                            onClick={() =>
+                                                toggleCheckItem(item.id)
+                                            }
+                                        >
+                                            {checked ? (
+                                                <CheckSquare className="h-4 w-4 text-green-600 dark:text-green-400 shrink-0" />
+                                            ) : (
+                                                <Square className="h-4 w-4 text-muted-foreground shrink-0" />
+                                            )}
+                                            <span
+                                                className={`text-sm ${checked ? "line-through text-muted-foreground" : ""}`}
+                                            >
+                                                {item.label}
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+
+                    <Separator />
+
+                    {/* Unit Notes Section */}
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Unit Notes
+                    </p>
+
+                    {loading ? (
+                        <div className="flex items-center justify-center py-8">
+                            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                        </div>
+                    ) : notes.length === 0 && !showAddForm ? (
+                        <div className="text-center py-4">
+                            <p className="text-sm text-muted-foreground mb-3">
+                                No units recorded yet. Add your first unit to
+                                start taking notes and photos.
+                            </p>
+                        </div>
+                    ) : (
+                        /* Existing unit notes */
+                        notes.map((note) => {
+                            const isExpanded = expandedNoteId === note.id;
+                            const isEditing = editingNoteId === note.id;
+                            const isUploading = uploadingNoteId === note.id;
+                            const photos = (note.photos as string[]) || [];
+
+                            return (
+                                <div
+                                    key={note.id}
+                                    className="rounded-lg border"
+                                >
+                                    {/* Header — always visible */}
+                                    <button
+                                        type="button"
+                                        className="w-full flex items-center justify-between p-3 hover:bg-muted/50 transition-colors"
+                                        onClick={() =>
+                                            setExpandedNoteId(
+                                                isExpanded ? null : note.id,
+                                            )
+                                        }
+                                    >
+                                        <div className="text-left">
+                                            <p className="font-medium text-sm">
+                                                {note.title}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {photos.length} photo
+                                                {photos.length !== 1 ? "s" : ""}
+                                                {note.notes && " · has notes"}
+                                            </p>
+                                        </div>
+                                        {isExpanded ? (
+                                            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                                        ) : (
+                                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                        )}
+                                    </button>
+
+                                    {/* Expanded content */}
+                                    {isExpanded && (
+                                        <div className="px-3 pb-3 space-y-3">
+                                            <Separator />
+
+                                            {isEditing ? (
+                                                /* Edit form */
+                                                <div className="space-y-3">
+                                                    <div className="space-y-1">
+                                                        <Label className="text-xs">
+                                                            Title
+                                                        </Label>
+                                                        <Input
+                                                            value={editTitle}
+                                                            onChange={(e) =>
+                                                                setEditTitle(
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            placeholder="e.g. Unit 305 - 2br 2ba"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <Label className="text-xs">
+                                                            Notes
+                                                        </Label>
+                                                        <Textarea
+                                                            value={editNotes}
+                                                            onChange={(e) =>
+                                                                setEditNotes(
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            placeholder="Your observations..."
+                                                            rows={3}
+                                                        />
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() =>
+                                                                handleUpdateNote(
+                                                                    note.id,
+                                                                )
+                                                            }
+                                                            disabled={
+                                                                editSaving
+                                                            }
+                                                        >
+                                                            {editSaving
+                                                                ? "Saving..."
+                                                                : "Save"}
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={() =>
+                                                                setEditingNoteId(
+                                                                    null,
+                                                                )
+                                                            }
+                                                        >
+                                                            Cancel
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                /* Read view */
+                                                <>
+                                                    {note.notes && (
+                                                        <p className="text-sm whitespace-pre-wrap bg-muted/50 rounded-lg p-2">
+                                                            {note.notes}
+                                                        </p>
+                                                    )}
+
+                                                    <div className="flex gap-2">
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={() =>
+                                                                startEditing(
+                                                                    note,
+                                                                )
+                                                            }
+                                                        >
+                                                            Edit
+                                                        </Button>
+                                                        <AlertDialog>
+                                                            <AlertDialogTrigger
+                                                                asChild
+                                                            >
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="destructive"
+                                                                >
+                                                                    <Trash2 className="h-3 w-3 mr-1" />
+                                                                    Delete
+                                                                </Button>
+                                                            </AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                                <AlertDialogHeader>
+                                                                    <AlertDialogTitle>
+                                                                        Delete
+                                                                        &quot;
+                                                                        {
+                                                                            note.title
+                                                                        }
+                                                                        &quot;?
+                                                                    </AlertDialogTitle>
+                                                                    <AlertDialogDescription>
+                                                                        This
+                                                                        will
+                                                                        remove
+                                                                        the unit
+                                                                        and all
+                                                                        its
+                                                                        photos.
+                                                                    </AlertDialogDescription>
+                                                                </AlertDialogHeader>
+                                                                <AlertDialogFooter>
+                                                                    <AlertDialogCancel>
+                                                                        Cancel
+                                                                    </AlertDialogCancel>
+                                                                    <AlertDialogAction
+                                                                        onClick={() =>
+                                                                            handleDeleteNote(
+                                                                                note.id,
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        Delete
+                                                                    </AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
+                                                    </div>
+                                                </>
+                                            )}
+
+                                            {/* Photos */}
+                                            <div className="space-y-2">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-xs font-medium flex items-center gap-1">
+                                                        <ImageIcon className="h-3 w-3" />
+                                                        Photos ({photos.length})
+                                                    </span>
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        size="sm"
+                                                        disabled={isUploading}
+                                                        onClick={() =>
+                                                            triggerPhotoUpload(
+                                                                note.id,
+                                                            )
+                                                        }
+                                                    >
+                                                        {isUploading ? (
+                                                            <>
+                                                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                                                Uploading...
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <Camera className="h-3 w-3 mr-1" />
+                                                                Add
+                                                            </>
+                                                        )}
+                                                    </Button>
+                                                </div>
+
+                                                {photos.length > 0 && (
+                                                    <div className="grid grid-cols-3 gap-1.5">
+                                                        {photos.map(
+                                                            (url, i) => (
+                                                                <div
+                                                                    key={i}
+                                                                    className="rounded-lg overflow-hidden border"
+                                                                >
+                                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                                    <img
+                                                                        src={
+                                                                            url
+                                                                        }
+                                                                        alt={`${note.title} photo ${i + 1}`}
+                                                                        className="h-20 w-full object-cover"
+                                                                    />
+                                                                </div>
+                                                            ),
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })
+                    )}
+
+                    {/* Add unit form */}
+                    {showAddForm ? (
+                        <div className="rounded-lg border p-3 space-y-3">
+                            <p className="text-sm font-medium">New Unit</p>
+                            <div className="space-y-1">
+                                <Label className="text-xs">Title</Label>
+                                <Input
+                                    value={newTitle}
+                                    onChange={(e) =>
+                                        setNewTitle(e.target.value)
+                                    }
+                                    placeholder="e.g. Unit 305 - 2br 2ba $2800/mo"
+                                    autoFocus
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <Label className="text-xs">
+                                    Notes (optional)
+                                </Label>
+                                <Textarea
+                                    value={newNotes}
+                                    onChange={(e) =>
+                                        setNewNotes(e.target.value)
+                                    }
+                                    placeholder="First impressions, layout, light, condition..."
+                                    rows={4}
+                                />
+                            </div>
+                            <div className="flex gap-2">
+                                <Button
+                                    size="sm"
+                                    onClick={handleAddNote}
+                                    disabled={saving}
+                                >
+                                    {saving ? "Saving..." : "Save Unit"}
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                        setShowAddForm(false);
+                                        setNewTitle("");
+                                        setNewNotes("");
+                                    }}
+                                >
+                                    Cancel
+                                </Button>
+                            </div>
+                        </div>
+                    ) : (
+                        <Button
+                            variant="outline"
+                            className="w-full"
+                            onClick={() => setShowAddForm(true)}
+                        >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Unit
+                        </Button>
+                    )}
                 </div>
-              )
-            })
-          )}
 
-          {/* Add unit form */}
-          {showAddForm ? (
-            <div className="rounded-lg border p-3 space-y-3">
-              <p className="text-sm font-medium">New Unit</p>
-              <div className="space-y-1">
-                <Label className="text-xs">Title</Label>
-                <Input
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="e.g. Unit 305 - 2br 2ba $2800/mo"
-                  autoFocus
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Notes (optional)</Label>
-                <Textarea
-                  value={newNotes}
-                  onChange={(e) => setNewNotes(e.target.value)}
-                  placeholder="First impressions, layout, light, condition..."
-                  rows={3}
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button size="sm" onClick={handleAddNote} disabled={saving}>
-                  {saving ? "Saving..." : "Save Unit"}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setShowAddForm(false)
-                    setNewTitle("")
-                    setNewNotes("")
-                  }}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => setShowAddForm(true)}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Unit
-            </Button>
-          )}
-        </div>
-
-        <div className="flex justify-end pt-2">
-          <Button variant="outline" onClick={onClose}>
-            Done
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
+                <div className="flex justify-end pt-2">
+                    <Button variant="outline" onClick={onClose}>
+                        Done
+                    </Button>
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
 }

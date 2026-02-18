@@ -105,6 +105,47 @@ export default async function HomePage() {
         preferencesComplete: onboardedUserIds.has(u.id),
     }));
 
+    // Fetch upcoming viewings for viewing day dashboard
+    const now = new Date();
+    const todayStart = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+    );
+    const twoDaysOut = new Date(todayStart.getTime() + 2 * 24 * 60 * 60 * 1000);
+
+    const upcomingViewings = await prisma.viewing.findMany({
+        where: {
+            status: "SCHEDULED",
+            scheduledAt: {
+                gte: todayStart,
+                lt: twoDaysOut,
+            },
+        },
+        include: {
+            listing: {
+                select: {
+                    id: true,
+                    title: true,
+                    address: true,
+                    price: true,
+                    bedrooms: true,
+                    bathrooms: true,
+                    neighbourhood: true,
+                    url: true,
+                    photos: true,
+                    scores: {
+                        include: {
+                            user: { select: { id: true, displayName: true } },
+                        },
+                    },
+                },
+            },
+            user: { select: { id: true, displayName: true } },
+        },
+        orderBy: { scheduledAt: "asc" },
+    });
+
     return (
         <AppShell
             user={{
@@ -122,6 +163,7 @@ export default async function HomePage() {
                 dismissedAreas={dismissedAreas}
                 areaNotes={areaNotes}
                 userStatuses={userStatuses}
+                upcomingViewings={upcomingViewings}
             />
         </AppShell>
     );

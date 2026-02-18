@@ -9,6 +9,11 @@ A full-stack apartment hunting app built with Next.js, Prisma, and PostgreSQL (S
 - **Area Recommendations** — AI-powered neighbourhood suggestions based on your priorities
 - **Calendar & Viewings** — Schedule viewings, plan viewing days across multiple listings in an area
 - **Viewing Mode** — On-site note-taking and photo capture per unit, with Supabase Storage uploads
+- **Viewing Checklist** — 14-item inspection checklist (water pressure, noise, cell signal, etc.) with progress tracking
+- **Voice Notes** — Record audio during viewings; AI generates concise bullet-point notes automatically
+- **Viewing Day Dashboard** — At-a-glance schedule for today/tomorrow's viewings with directions between locations
+- **Side-by-Side Comparison** — Compare up to 4 listings across all attributes, scores, and viewing notes (desktop)
+- **Expense Calculator** — Per-listing monthly cost estimator with editable area-specific defaults
 - **Multi-User** — Multiple users with independent preferences, scores, and color-coded calendar entries
 - **Interactive Map** — Leaflet map view of all listings with geocoded addresses
 - **Budget Calculator** — Take-home pay estimation with configurable tax brackets
@@ -60,23 +65,25 @@ npm run dev
 app/
   api/                  # REST API routes
     listings/           # Listing CRUD, evaluation, photo upload
-    viewings/           # Viewing CRUD, notes, note photos
+    viewings/           # Viewing CRUD, notes, note photos, voice transcription
     auth/               # Login, logout, session
     recommendations/    # AI area recommendations
     preferences/        # User preferences
     todos/              # Task management
   calendar/             # Calendar page
+  compare/              # Side-by-side listing comparison (desktop)
   listings/             # Listing pages (list, detail, edit, new)
   map/                  # Map view
   budget/               # Budget calculator
   profile/              # User profile
 
 components/
-  calendar/             # Calendar view, viewing dialogs, viewing mode
-  listings/             # Listing cards, forms, plan viewing day
+  calendar/             # Calendar view, viewing dialogs, viewing mode (checklist + voice notes)
+  compare/              # Side-by-side listing comparison
+  listings/             # Listing cards, forms, plan viewing day, expense calculator
   map/                  # Map components (listings map, location picker)
   budget/               # Budget calculator view
-  dashboard/            # Dashboard content
+  dashboard/            # Dashboard content, viewing day banner
   preferences/          # Onboarding wizard
   layout/               # App shell, page wrapper
   ui/                   # shadcn/ui components
