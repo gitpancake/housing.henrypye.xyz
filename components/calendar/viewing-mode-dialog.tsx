@@ -35,8 +35,6 @@ import {
     StickyNote,
     CheckSquare,
     Square,
-    Mic,
-    MicOff,
     Sparkles,
     Building2,
     Home,
@@ -121,17 +119,10 @@ export function ViewingModeDialog({
         Record<string, boolean>
     >({});
 
-    // Voice recording state (uses Web Speech API for browser-side transcription)
-    const [isRecording, setIsRecording] = useState(false);
-    const [recordingTime, setRecordingTime] = useState(0);
-    const [liveTranscript, setLiveTranscript] = useState("");
-    const [transcribing, setTranscribing] = useState(false);
-    const [manualTranscript, setManualTranscript] = useState("");
-    const [showManualInput, setShowManualInput] = useState(false);
-    const recognitionRef = useRef<SpeechRecognition | null>(null);
-    const transcriptRef = useRef("");
-    const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(
-        null,
+    // Per-unit AI notes state
+    const [aiNoteInput, setAiNoteInput] = useState<Record<string, string>>({});
+    const [aiNoteLoading, setAiNoteLoading] = useState<Record<string, boolean>>(
+        {},
     );
 
     const fetchNotes = useCallback(async () => {
@@ -159,20 +150,10 @@ export function ViewingModeDialog({
             setShowBuildingChecklist(true);
             setCheckedUnitItems({});
             setShowUnitChecklist({});
+            setAiNoteInput({});
+            setAiNoteLoading({});
         }
     }, [open, viewingId, fetchNotes]);
-
-    // Cleanup recording on unmount/close
-    useEffect(() => {
-        return () => {
-            if (recognitionRef.current) {
-                recognitionRef.current.abort();
-            }
-            if (recordingTimerRef.current) {
-                clearInterval(recordingTimerRef.current);
-            }
-        };
-    }, []);
 
     function toggleBuildingItem(id: string) {
         setCheckedBuildingItems((prev) => {
@@ -193,102 +174,19 @@ export function ViewingModeDialog({
         });
     }
 
-    function startRecording() {
-        const SpeechRecognition =
-            window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-            toast.error(
-                "Speech recognition not supported in this browser. Try Chrome.",
-            );
+    async function handleAiGenerate(noteId: string) {
+        const input = (aiNoteInput[noteId] ?? "").trim();
+        if (!input) {
+            toast.error("Type your observations first");
             return;
         }
 
-        const recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = "en-US";
-
-        transcriptRef.current = "";
-        setLiveTranscript("");
-
-        recognition.onresult = (event: SpeechRecognitionEvent) => {
-            let final = "";
-            let interim = "";
-            for (let i = 0; i < event.results.length; i++) {
-                const result = event.results[i];
-                if (result.isFinal) {
-                    final += result[0].transcript + " ";
-                } else {
-                    interim += result[0].transcript;
-                }
-            }
-            transcriptRef.current = final;
-            setLiveTranscript(final + interim);
-        };
-
-        recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-            if (event.error === "aborted") return;
-            setIsRecording(false);
-            if (recordingTimerRef.current) {
-                clearInterval(recordingTimerRef.current);
-                recordingTimerRef.current = null;
-            }
-            if (event.error === "network" || event.error === "not-allowed") {
-                setShowManualInput(true);
-                toast.error(
-                    "Voice recognition unavailable — type your notes instead",
-                );
-            } else {
-                toast.error(`Speech recognition error: ${event.error}`);
-            }
-        };
-
-        recognition.onend = () => {
-            // Auto-restart if still recording (speech recognition can time out)
-            if (isRecording && recognitionRef.current === recognition) {
-                try {
-                    recognition.start();
-                } catch {
-                    // already started or stopped
-                }
-            }
-        };
-
-        recognitionRef.current = recognition;
-        recognition.start();
-        setIsRecording(true);
-        setRecordingTime(0);
-        recordingTimerRef.current = setInterval(() => {
-            setRecordingTime((t) => t + 1);
-        }, 1000);
-    }
-
-    async function handleStopAndTranscribe() {
-        // Stop speech recognition
-        if (recognitionRef.current) {
-            recognitionRef.current.abort();
-            recognitionRef.current = null;
-        }
-        setIsRecording(false);
-        if (recordingTimerRef.current) {
-            clearInterval(recordingTimerRef.current);
-            recordingTimerRef.current = null;
-        }
-
-        const transcript = transcriptRef.current.trim();
-        if (!transcript) {
-            toast.error(
-                "No speech detected. Try speaking louder or closer to the mic.",
-            );
-            return;
-        }
-
-        setTranscribing(true);
+        setAiNoteLoading((prev) => ({ ...prev, [noteId]: true }));
         try {
             const res = await fetch("/api/viewings/transcribe", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ transcript, listingTitle }),
+                body: JSON.stringify({ transcript: input, listingTitle }),
             });
 
             if (!res.ok) {
@@ -299,74 +197,36 @@ export function ViewingModeDialog({
             const data = await res.json();
             const aiNotes = data.notes as string;
 
-            // If add form is open, append to notes. Otherwise pre-fill a new unit.
-            if (showAddForm) {
-                setNewNotes((prev) =>
-                    prev ? prev + "\n\n" + aiNotes : aiNotes,
-                );
-            } else {
-                setShowAddForm(true);
-                setNewTitle("");
-                setNewNotes(aiNotes);
-            }
-            setLiveTranscript("");
-            toast.success("Voice notes generated");
+            // Append AI-generated notes to the unit via the API
+            const note = notes.find((n) => n.id === noteId);
+            const existingNotes = note?.notes ?? "";
+            const updatedNotes = existingNotes
+                ? existingNotes + "\n\n" + aiNotes
+                : aiNotes;
+
+            const updateRes = await fetch(
+                `/api/viewings/${viewingId}/notes/${noteId}`,
+                {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        title: note?.title,
+                        notes: updatedNotes,
+                    }),
+                },
+            );
+            if (!updateRes.ok) throw new Error("Failed to save notes");
+
+            setAiNoteInput((prev) => ({ ...prev, [noteId]: "" }));
+            toast.success("Notes added to unit");
+            await fetchNotes();
         } catch (err) {
             toast.error(
                 err instanceof Error ? err.message : "Failed to generate notes",
             );
         } finally {
-            setTranscribing(false);
+            setAiNoteLoading((prev) => ({ ...prev, [noteId]: false }));
         }
-    }
-
-    async function handleManualTranscribe() {
-        const transcript = manualTranscript.trim();
-        if (!transcript) {
-            toast.error("Please type your observations first");
-            return;
-        }
-
-        setTranscribing(true);
-        try {
-            const res = await fetch("/api/viewings/transcribe", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ transcript, listingTitle }),
-            });
-
-            if (!res.ok) {
-                const err = await res.json();
-                throw new Error(err.error || "Failed to generate notes");
-            }
-
-            const data = await res.json();
-            const aiNotes = data.notes as string;
-
-            if (showAddForm) {
-                setNewNotes((prev) =>
-                    prev ? prev + "\n\n" + aiNotes : aiNotes,
-                );
-            } else {
-                setShowAddForm(true);
-                setNewTitle("");
-                setNewNotes(aiNotes);
-            }
-            setManualTranscript("");
-            toast.success("Notes generated");
-        } catch (err) {
-            toast.error(
-                err instanceof Error ? err.message : "Failed to generate notes",
-            );
-        } finally {
-            setTranscribing(false);
-        }
-    }
-
-    function formatRecordingTime(seconds: number) {
-        const m = Math.floor(seconds / 60);
-        const s = seconds % 60;
-        return `${m}:${s.toString().padStart(2, "0")}`;
     }
 
     async function handleAddNote() {
@@ -523,123 +383,6 @@ export function ViewingModeDialog({
                 />
 
                 <div className="space-y-3">
-                    {/* Voice Recording */}
-                    <div className="rounded-lg border p-3 space-y-2">
-                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                            <Sparkles className="h-3 w-3" />
-                            Voice Notes
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                            {showManualInput
-                                ? "Type your observations — AI will clean them into concise notes."
-                                : "Speak your thoughts while walking through — AI will clean them into concise notes."}
-                        </p>
-
-                        {showManualInput ? (
-                            /* Manual text fallback */
-                            <div className="space-y-2">
-                                <Textarea
-                                    value={manualTranscript}
-                                    onChange={(e) =>
-                                        setManualTranscript(e.target.value)
-                                    }
-                                    placeholder="Type your observations here... e.g. nice natural light, kitchen is small, noisy street below"
-                                    rows={3}
-                                />
-                                <div className="flex items-center gap-2">
-                                    <Button
-                                        size="sm"
-                                        onClick={handleManualTranscribe}
-                                        disabled={
-                                            transcribing ||
-                                            !manualTranscript.trim()
-                                        }
-                                    >
-                                        {transcribing ? (
-                                            <>
-                                                <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                                                Generating...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-                                                Generate Notes
-                                            </>
-                                        )}
-                                    </Button>
-                                    <button
-                                        type="button"
-                                        className="text-xs text-muted-foreground underline hover:text-foreground"
-                                        onClick={() =>
-                                            setShowManualInput(false)
-                                        }
-                                    >
-                                        Try voice again
-                                    </button>
-                                </div>
-                            </div>
-                        ) : (
-                            /* Voice recording */
-                            <>
-                                <div className="flex items-center gap-2">
-                                    {isRecording ? (
-                                        <>
-                                            <Button
-                                                size="sm"
-                                                variant="destructive"
-                                                onClick={
-                                                    handleStopAndTranscribe
-                                                }
-                                                disabled={transcribing}
-                                            >
-                                                <MicOff className="h-3.5 w-3.5 mr-1.5" />
-                                                Stop & Generate
-                                            </Button>
-                                            <span className="text-sm font-mono text-red-600 dark:text-red-400 animate-pulse">
-                                                {formatRecordingTime(
-                                                    recordingTime,
-                                                )}
-                                            </span>
-                                        </>
-                                    ) : transcribing ? (
-                                        <Button size="sm" disabled>
-                                            <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                                            Generating notes...
-                                        </Button>
-                                    ) : (
-                                        <>
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={startRecording}
-                                            >
-                                                <Mic className="h-3.5 w-3.5 mr-1.5" />
-                                                Record
-                                            </Button>
-                                            <button
-                                                type="button"
-                                                className="text-xs text-muted-foreground underline hover:text-foreground"
-                                                onClick={() =>
-                                                    setShowManualInput(true)
-                                                }
-                                            >
-                                                Type instead
-                                            </button>
-                                        </>
-                                    )}
-                                </div>
-                                {/* Live transcript preview */}
-                                {liveTranscript && (
-                                    <div className="rounded bg-muted/50 p-2 max-h-24 overflow-y-auto">
-                                        <p className="text-xs text-muted-foreground italic">
-                                            {liveTranscript}
-                                        </p>
-                                    </div>
-                                )}
-                            </>
-                        )}
-                    </div>
-
                     {/* Building Checklist */}
                     <div className="rounded-lg border">
                         <button
@@ -987,6 +730,63 @@ export function ViewingModeDialog({
                                                     </div>
                                                 );
                                             })()}
+
+                                            {/* AI Notes */}
+                                            <div className="rounded-lg border p-2.5 space-y-2">
+                                                <p className="text-xs font-medium flex items-center gap-1.5 text-muted-foreground">
+                                                    <Sparkles className="h-3 w-3" />
+                                                    AI Notes
+                                                </p>
+                                                <Textarea
+                                                    value={
+                                                        aiNoteInput[note.id] ??
+                                                        ""
+                                                    }
+                                                    onChange={(e) =>
+                                                        setAiNoteInput(
+                                                            (prev) => ({
+                                                                ...prev,
+                                                                [note.id]:
+                                                                    e.target
+                                                                        .value,
+                                                            }),
+                                                        )
+                                                    }
+                                                    placeholder="Type quick observations... AI will clean them up"
+                                                    rows={2}
+                                                    className="text-xs"
+                                                />
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        handleAiGenerate(
+                                                            note.id,
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        aiNoteLoading[
+                                                            note.id
+                                                        ] ||
+                                                        !(
+                                                            aiNoteInput[
+                                                                note.id
+                                                            ] ?? ""
+                                                        ).trim()
+                                                    }
+                                                >
+                                                    {aiNoteLoading[note.id] ? (
+                                                        <>
+                                                            <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                                                            Generating...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+                                                            Generate & Add Notes
+                                                        </>
+                                                    )}
+                                                </Button>
+                                            </div>
 
                                             {/* Photos */}
                                             <div className="space-y-2">
