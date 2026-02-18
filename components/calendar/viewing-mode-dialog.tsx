@@ -33,12 +33,13 @@ import {
     Trash2,
     ImageIcon,
     StickyNote,
-    ClipboardCheck,
     CheckSquare,
     Square,
     Mic,
     MicOff,
     Sparkles,
+    Building2,
+    Home,
 } from "lucide-react";
 
 interface ViewingNoteData {
@@ -57,8 +58,20 @@ interface ViewingModeDialogProps {
     listingTitle: string;
 }
 
-// Default viewing checklist items
-const DEFAULT_CHECKLIST = [
+// Building-level checklist (checked once per viewing)
+const BUILDING_CHECKLIST = [
+    { id: "locks_security", label: "Locks & building security" },
+    { id: "laundry", label: "Laundry situation" },
+    { id: "parking", label: "Parking & bike storage" },
+    { id: "neighbours", label: "Building vibe & common areas" },
+    { id: "pests", label: "Signs of pests or mould" },
+    { id: "heating_cooling", label: "Heating & cooling system" },
+    { id: "elevator", label: "Elevator & stairwell condition" },
+    { id: "mail_buzzer", label: "Mail & buzzer setup" },
+];
+
+// Unit-level checklist (checked per unit)
+const UNIT_CHECKLIST = [
     { id: "water_pressure", label: "Water pressure (kitchen + bathroom)" },
     { id: "natural_light", label: "Natural light & window direction" },
     { id: "outlets", label: "Number of outlets per room" },
@@ -67,12 +80,6 @@ const DEFAULT_CHECKLIST = [
     { id: "cell_signal", label: "Cell signal strength" },
     { id: "appliances", label: "Appliances condition" },
     { id: "walls_floors", label: "Walls, floors & ceiling condition" },
-    { id: "locks_security", label: "Locks & building security" },
-    { id: "laundry", label: "Laundry situation" },
-    { id: "heating_cooling", label: "Heating & cooling" },
-    { id: "pests", label: "Signs of pests or mould" },
-    { id: "parking", label: "Parking & bike storage" },
-    { id: "neighbours", label: "Building vibe & common areas" },
 ];
 
 export function ViewingModeDialog({
@@ -103,8 +110,16 @@ export function ViewingModeDialog({
     const activeNoteIdRef = useRef<string | null>(null);
 
     // Checklist state
-    const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
-    const [showChecklist, setShowChecklist] = useState(true);
+    const [checkedBuildingItems, setCheckedBuildingItems] = useState<
+        Set<string>
+    >(new Set());
+    const [showBuildingChecklist, setShowBuildingChecklist] = useState(true);
+    const [checkedUnitItems, setCheckedUnitItems] = useState<
+        Record<string, Set<string>>
+    >({});
+    const [showUnitChecklist, setShowUnitChecklist] = useState<
+        Record<string, boolean>
+    >({});
 
     // Voice recording state (uses Web Speech API for browser-side transcription)
     const [isRecording, setIsRecording] = useState(false);
@@ -138,8 +153,10 @@ export function ViewingModeDialog({
             setShowAddForm(false);
             setExpandedNoteId(null);
             setEditingNoteId(null);
-            setCheckedItems(new Set());
-            setShowChecklist(true);
+            setCheckedBuildingItems(new Set());
+            setShowBuildingChecklist(true);
+            setCheckedUnitItems({});
+            setShowUnitChecklist({});
         }
     }, [open, viewingId, fetchNotes]);
 
@@ -155,12 +172,22 @@ export function ViewingModeDialog({
         };
     }, []);
 
-    function toggleCheckItem(id: string) {
-        setCheckedItems((prev) => {
+    function toggleBuildingItem(id: string) {
+        setCheckedBuildingItems((prev) => {
             const next = new Set(prev);
             if (next.has(id)) next.delete(id);
             else next.add(id);
             return next;
+        });
+    }
+
+    function toggleUnitItem(noteId: string, itemId: string) {
+        setCheckedUnitItems((prev) => {
+            const current = prev[noteId] ?? new Set<string>();
+            const next = new Set(current);
+            if (next.has(itemId)) next.delete(itemId);
+            else next.add(itemId);
+            return { ...prev, [noteId]: next };
         });
     }
 
@@ -413,8 +440,8 @@ export function ViewingModeDialog({
         setExpandedNoteId(note.id);
     }
 
-    const checkedCount = checkedItems.size;
-    const totalChecklist = DEFAULT_CHECKLIST.length;
+    const buildingCheckedCount = checkedBuildingItems.size;
+    const buildingTotal = BUILDING_CHECKLIST.length;
 
     return (
         <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -497,40 +524,44 @@ export function ViewingModeDialog({
                         )}
                     </div>
 
-                    {/* Checklist */}
+                    {/* Building Checklist */}
                     <div className="rounded-lg border">
                         <button
                             type="button"
                             className="w-full flex items-center justify-between p-3 hover:bg-muted/50 transition-colors"
-                            onClick={() => setShowChecklist(!showChecklist)}
+                            onClick={() =>
+                                setShowBuildingChecklist(!showBuildingChecklist)
+                            }
                         >
                             <div className="flex items-center gap-2">
-                                <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
+                                <Building2 className="h-4 w-4 text-muted-foreground" />
                                 <span className="text-sm font-medium">
-                                    Viewing Checklist
+                                    Building Checklist
                                 </span>
                                 <span className="text-xs text-muted-foreground">
-                                    {checkedCount}/{totalChecklist}
+                                    {buildingCheckedCount}/{buildingTotal}
                                 </span>
                             </div>
-                            {showChecklist ? (
+                            {showBuildingChecklist ? (
                                 <ChevronUp className="h-4 w-4 text-muted-foreground" />
                             ) : (
                                 <ChevronDown className="h-4 w-4 text-muted-foreground" />
                             )}
                         </button>
-                        {showChecklist && (
+                        {showBuildingChecklist && (
                             <div className="px-3 pb-3 space-y-1">
                                 <Separator className="mb-2" />
-                                {DEFAULT_CHECKLIST.map((item) => {
-                                    const checked = checkedItems.has(item.id);
+                                {BUILDING_CHECKLIST.map((item) => {
+                                    const checked = checkedBuildingItems.has(
+                                        item.id,
+                                    );
                                     return (
                                         <button
                                             key={item.id}
                                             type="button"
                                             className="w-full flex items-center gap-2.5 py-1.5 px-1 rounded hover:bg-muted/50 transition-colors text-left"
                                             onClick={() =>
-                                                toggleCheckItem(item.id)
+                                                toggleBuildingItem(item.id)
                                             }
                                         >
                                             {checked ? (
@@ -748,6 +779,98 @@ export function ViewingModeDialog({
                                                     </div>
                                                 </>
                                             )}
+
+                                            {/* Unit Checklist */}
+                                            {(() => {
+                                                const unitChecked =
+                                                    checkedUnitItems[note.id] ??
+                                                    new Set<string>();
+                                                const unitCheckedCount =
+                                                    unitChecked.size;
+                                                const unitTotal =
+                                                    UNIT_CHECKLIST.length;
+                                                const isUnitChecklistOpen =
+                                                    showUnitChecklist[
+                                                        note.id
+                                                    ] ?? false;
+                                                return (
+                                                    <div className="rounded-lg border">
+                                                        <button
+                                                            type="button"
+                                                            className="w-full flex items-center justify-between p-2.5 hover:bg-muted/50 transition-colors"
+                                                            onClick={() =>
+                                                                setShowUnitChecklist(
+                                                                    (prev) => ({
+                                                                        ...prev,
+                                                                        [note.id]:
+                                                                            !isUnitChecklistOpen,
+                                                                    }),
+                                                                )
+                                                            }
+                                                        >
+                                                            <div className="flex items-center gap-2">
+                                                                <Home className="h-3.5 w-3.5 text-muted-foreground" />
+                                                                <span className="text-xs font-medium">
+                                                                    Unit
+                                                                    Checklist
+                                                                </span>
+                                                                <span className="text-xs text-muted-foreground">
+                                                                    {
+                                                                        unitCheckedCount
+                                                                    }
+                                                                    /{unitTotal}
+                                                                </span>
+                                                            </div>
+                                                            {isUnitChecklistOpen ? (
+                                                                <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
+                                                            ) : (
+                                                                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                                                            )}
+                                                        </button>
+                                                        {isUnitChecklistOpen && (
+                                                            <div className="px-2.5 pb-2.5 space-y-0.5">
+                                                                <Separator className="mb-1.5" />
+                                                                {UNIT_CHECKLIST.map(
+                                                                    (item) => {
+                                                                        const checked =
+                                                                            unitChecked.has(
+                                                                                item.id,
+                                                                            );
+                                                                        return (
+                                                                            <button
+                                                                                key={
+                                                                                    item.id
+                                                                                }
+                                                                                type="button"
+                                                                                className="w-full flex items-center gap-2 py-1 px-1 rounded hover:bg-muted/50 transition-colors text-left"
+                                                                                onClick={() =>
+                                                                                    toggleUnitItem(
+                                                                                        note.id,
+                                                                                        item.id,
+                                                                                    )
+                                                                                }
+                                                                            >
+                                                                                {checked ? (
+                                                                                    <CheckSquare className="h-3.5 w-3.5 text-green-600 dark:text-green-400 shrink-0" />
+                                                                                ) : (
+                                                                                    <Square className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                                                                )}
+                                                                                <span
+                                                                                    className={`text-xs ${checked ? "line-through text-muted-foreground" : ""}`}
+                                                                                >
+                                                                                    {
+                                                                                        item.label
+                                                                                    }
+                                                                                </span>
+                                                                            </button>
+                                                                        );
+                                                                    },
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })()}
 
                                             {/* Photos */}
                                             <div className="space-y-2">
