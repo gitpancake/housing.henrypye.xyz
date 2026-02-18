@@ -35,7 +35,6 @@ import {
     StickyNote,
     CheckSquare,
     Square,
-    Sparkles,
     Building2,
     Home,
 } from "lucide-react";
@@ -119,12 +118,6 @@ export function ViewingModeDialog({
         Record<string, boolean>
     >({});
 
-    // Per-unit AI notes state
-    const [aiNoteInput, setAiNoteInput] = useState<Record<string, string>>({});
-    const [aiNoteLoading, setAiNoteLoading] = useState<Record<string, boolean>>(
-        {},
-    );
-
     const fetchNotes = useCallback(async () => {
         if (!viewingId) return;
         setLoading(true);
@@ -150,8 +143,6 @@ export function ViewingModeDialog({
             setShowBuildingChecklist(true);
             setCheckedUnitItems({});
             setShowUnitChecklist({});
-            setAiNoteInput({});
-            setAiNoteLoading({});
         }
     }, [open, viewingId, fetchNotes]);
 
@@ -172,61 +163,6 @@ export function ViewingModeDialog({
             else next.add(itemId);
             return { ...prev, [noteId]: next };
         });
-    }
-
-    async function handleAiGenerate(noteId: string) {
-        const input = (aiNoteInput[noteId] ?? "").trim();
-        if (!input) {
-            toast.error("Type your observations first");
-            return;
-        }
-
-        setAiNoteLoading((prev) => ({ ...prev, [noteId]: true }));
-        try {
-            const res = await fetch("/api/viewings/transcribe", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ transcript: input, listingTitle }),
-            });
-
-            if (!res.ok) {
-                const err = await res.json();
-                throw new Error(err.error || "Failed to generate notes");
-            }
-
-            const data = await res.json();
-            const aiNotes = data.notes as string;
-
-            // Append AI-generated notes to the unit via the API
-            const note = notes.find((n) => n.id === noteId);
-            const existingNotes = note?.notes ?? "";
-            const updatedNotes = existingNotes
-                ? existingNotes + "\n\n" + aiNotes
-                : aiNotes;
-
-            const updateRes = await fetch(
-                `/api/viewings/${viewingId}/notes/${noteId}`,
-                {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        title: note?.title,
-                        notes: updatedNotes,
-                    }),
-                },
-            );
-            if (!updateRes.ok) throw new Error("Failed to save notes");
-
-            setAiNoteInput((prev) => ({ ...prev, [noteId]: "" }));
-            toast.success("Notes added to unit");
-            await fetchNotes();
-        } catch (err) {
-            toast.error(
-                err instanceof Error ? err.message : "Failed to generate notes",
-            );
-        } finally {
-            setAiNoteLoading((prev) => ({ ...prev, [noteId]: false }));
-        }
     }
 
     async function handleAddNote() {
@@ -730,63 +666,6 @@ export function ViewingModeDialog({
                                                     </div>
                                                 );
                                             })()}
-
-                                            {/* AI Notes */}
-                                            <div className="rounded-lg border p-2.5 space-y-2">
-                                                <p className="text-xs font-medium flex items-center gap-1.5 text-muted-foreground">
-                                                    <Sparkles className="h-3 w-3" />
-                                                    AI Notes
-                                                </p>
-                                                <Textarea
-                                                    value={
-                                                        aiNoteInput[note.id] ??
-                                                        ""
-                                                    }
-                                                    onChange={(e) =>
-                                                        setAiNoteInput(
-                                                            (prev) => ({
-                                                                ...prev,
-                                                                [note.id]:
-                                                                    e.target
-                                                                        .value,
-                                                            }),
-                                                        )
-                                                    }
-                                                    placeholder="Type quick observations... AI will clean them up"
-                                                    rows={2}
-                                                    className="text-xs"
-                                                />
-                                                <Button
-                                                    size="sm"
-                                                    onClick={() =>
-                                                        handleAiGenerate(
-                                                            note.id,
-                                                        )
-                                                    }
-                                                    disabled={
-                                                        aiNoteLoading[
-                                                            note.id
-                                                        ] ||
-                                                        !(
-                                                            aiNoteInput[
-                                                                note.id
-                                                            ] ?? ""
-                                                        ).trim()
-                                                    }
-                                                >
-                                                    {aiNoteLoading[note.id] ? (
-                                                        <>
-                                                            <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                                                            Generating...
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-                                                            Generate & Add Notes
-                                                        </>
-                                                    )}
-                                                </Button>
-                                            </div>
 
                                             {/* Photos */}
                                             <div className="space-y-2">
