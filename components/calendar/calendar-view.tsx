@@ -34,6 +34,8 @@ import {
     addDays,
 } from "date-fns";
 import { ViewingDialog } from "./viewing-dialog";
+import { ViewingPreviewDialog } from "./viewing-preview-dialog";
+import { ViewingModeDialog } from "./viewing-mode-dialog";
 import { TodoDialog, type TodoData } from "./todo-dialog";
 import { getAreaFromAddress } from "@/lib/area-utils";
 
@@ -48,6 +50,7 @@ interface ViewingData {
         title: string;
         address: string;
         price: number | null;
+        url: string;
     };
     user: { id: string; displayName: string };
 }
@@ -125,6 +128,11 @@ export function CalendarView({
     );
     const [selectedTodo, setSelectedTodo] = useState<TodoData | null>(null);
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
+    const [previewOpen, setPreviewOpen] = useState(false);
+    const [previewViewing, setPreviewViewing] = useState<ViewingData | null>(
+        null,
+    );
+    const [viewingModeOpen, setViewingModeOpen] = useState(false);
 
     // Build a user index for consistent color assignment
     const userIndex = new Map<string, number>();
@@ -155,6 +163,11 @@ export function CalendarView({
         setSelectedViewing(null);
         setSelectedDate(date || null);
         setDialogOpen(true);
+    }
+
+    function openPreviewDialog(viewing: ViewingData) {
+        setPreviewViewing(viewing);
+        setPreviewOpen(true);
     }
 
     function openEditDialog(viewing: ViewingData) {
@@ -355,7 +368,9 @@ export function CalendarView({
                                                         }`}
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            openEditDialog(v);
+                                                            openPreviewDialog(
+                                                                v,
+                                                            );
                                                         }}
                                                     >
                                                         <div className="font-medium truncate">
@@ -508,7 +523,7 @@ export function CalendarView({
                                                             }}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                openEditDialog(
+                                                                openPreviewDialog(
                                                                     v,
                                                                 );
                                                             }}
@@ -651,7 +666,7 @@ export function CalendarView({
                                                 key={`v-${v.id}`}
                                                 className={`w-full text-left flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/50 transition-colors ${colors.border}`}
                                                 onClick={() =>
-                                                    openEditDialog(v)
+                                                    openPreviewDialog(v)
                                                 }
                                             >
                                                 <div
@@ -789,6 +804,25 @@ export function CalendarView({
             )}
 
             {/* Dialogs */}
+            <ViewingPreviewDialog
+                open={previewOpen}
+                onClose={() => setPreviewOpen(false)}
+                onEdit={() => {
+                    setPreviewOpen(false);
+                    if (previewViewing) openEditDialog(previewViewing);
+                }}
+                onStartViewing={() => {
+                    setPreviewOpen(false);
+                    setViewingModeOpen(true);
+                }}
+                viewing={previewViewing}
+            />
+            <ViewingModeDialog
+                open={viewingModeOpen}
+                onClose={() => setViewingModeOpen(false)}
+                viewingId={previewViewing?.id || null}
+                listingTitle={previewViewing?.listing.title || ""}
+            />
             <ViewingDialog
                 open={dialogOpen}
                 onClose={() => setDialogOpen(false)}

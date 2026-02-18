@@ -168,10 +168,26 @@ model Viewing {
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
 
-  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing      Listing       @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  viewingNotes ViewingNote[]
 
   @@map("viewings")
+  @@schema("housing")
+}
+
+model ViewingNote {
+  id        String   @id @default(uuid())
+  viewingId String   @map("viewing_id")
+  title     String
+  notes     String?
+  photos    Json     @default("[]")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  viewing Viewing @relation(fields: [viewingId], references: [id], onDelete: Cascade)
+
+  @@map("viewing_notes")
   @@schema("housing")
 }
 

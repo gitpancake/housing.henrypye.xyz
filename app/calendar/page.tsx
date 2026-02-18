@@ -16,6 +16,7 @@ interface ViewingData {
         title: string;
         address: string;
         price: number | null;
+        url: string;
     };
     user: { id: string; displayName: string };
 }
