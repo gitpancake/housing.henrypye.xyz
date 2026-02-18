@@ -126,6 +126,8 @@ export function ViewingModeDialog({
     const [recordingTime, setRecordingTime] = useState(0);
     const [liveTranscript, setLiveTranscript] = useState("");
     const [transcribing, setTranscribing] = useState(false);
+    const [manualTranscript, setManualTranscript] = useState("");
+    const [showManualInput, setShowManualInput] = useState(false);
     const recognitionRef = useRef<SpeechRecognition | null>(null);
     const transcriptRef = useRef("");
     const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(
@@ -225,13 +227,19 @@ export function ViewingModeDialog({
         };
 
         recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-            if (event.error !== "aborted") {
-                toast.error(`Speech recognition error: ${event.error}`);
-            }
+            if (event.error === "aborted") return;
             setIsRecording(false);
             if (recordingTimerRef.current) {
                 clearInterval(recordingTimerRef.current);
                 recordingTimerRef.current = null;
+            }
+            if (event.error === "network" || event.error === "not-allowed") {
+                setShowManualInput(true);
+                toast.error(
+                    "Voice recognition unavailable — type your notes instead",
+                );
+            } else {
+                toast.error(`Speech recognition error: ${event.error}`);
             }
         };
 
@@ -303,6 +311,49 @@ export function ViewingModeDialog({
             }
             setLiveTranscript("");
             toast.success("Voice notes generated");
+        } catch (err) {
+            toast.error(
+                err instanceof Error ? err.message : "Failed to generate notes",
+            );
+        } finally {
+            setTranscribing(false);
+        }
+    }
+
+    async function handleManualTranscribe() {
+        const transcript = manualTranscript.trim();
+        if (!transcript) {
+            toast.error("Please type your observations first");
+            return;
+        }
+
+        setTranscribing(true);
+        try {
+            const res = await fetch("/api/viewings/transcribe", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ transcript, listingTitle }),
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || "Failed to generate notes");
+            }
+
+            const data = await res.json();
+            const aiNotes = data.notes as string;
+
+            if (showAddForm) {
+                setNewNotes((prev) =>
+                    prev ? prev + "\n\n" + aiNotes : aiNotes,
+                );
+            } else {
+                setShowAddForm(true);
+                setNewTitle("");
+                setNewNotes(aiNotes);
+            }
+            setManualTranscript("");
+            toast.success("Notes generated");
         } catch (err) {
             toast.error(
                 err instanceof Error ? err.message : "Failed to generate notes",
@@ -479,48 +530,113 @@ export function ViewingModeDialog({
                             Voice Notes
                         </p>
                         <p className="text-xs text-muted-foreground">
-                            Speak your thoughts while walking through — AI will
-                            clean them into concise notes.
+                            {showManualInput
+                                ? "Type your observations — AI will clean them into concise notes."
+                                : "Speak your thoughts while walking through — AI will clean them into concise notes."}
                         </p>
-                        <div className="flex items-center gap-2">
-                            {isRecording ? (
-                                <>
+
+                        {showManualInput ? (
+                            /* Manual text fallback */
+                            <div className="space-y-2">
+                                <Textarea
+                                    value={manualTranscript}
+                                    onChange={(e) =>
+                                        setManualTranscript(e.target.value)
+                                    }
+                                    placeholder="Type your observations here... e.g. nice natural light, kitchen is small, noisy street below"
+                                    rows={3}
+                                />
+                                <div className="flex items-center gap-2">
                                     <Button
                                         size="sm"
-                                        variant="destructive"
-                                        onClick={handleStopAndTranscribe}
-                                        disabled={transcribing}
+                                        onClick={handleManualTranscribe}
+                                        disabled={
+                                            transcribing ||
+                                            !manualTranscript.trim()
+                                        }
                                     >
-                                        <MicOff className="h-3.5 w-3.5 mr-1.5" />
-                                        Stop & Generate
+                                        {transcribing ? (
+                                            <>
+                                                <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                                                Generating...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+                                                Generate Notes
+                                            </>
+                                        )}
                                     </Button>
-                                    <span className="text-sm font-mono text-red-600 dark:text-red-400 animate-pulse">
-                                        {formatRecordingTime(recordingTime)}
-                                    </span>
-                                </>
-                            ) : transcribing ? (
-                                <Button size="sm" disabled>
-                                    <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                                    Generating notes...
-                                </Button>
-                            ) : (
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={startRecording}
-                                >
-                                    <Mic className="h-3.5 w-3.5 mr-1.5" />
-                                    Record
-                                </Button>
-                            )}
-                        </div>
-                        {/* Live transcript preview */}
-                        {(isRecording || liveTranscript) && liveTranscript && (
-                            <div className="rounded bg-muted/50 p-2 max-h-24 overflow-y-auto">
-                                <p className="text-xs text-muted-foreground italic">
-                                    {liveTranscript}
-                                </p>
+                                    <button
+                                        type="button"
+                                        className="text-xs text-muted-foreground underline hover:text-foreground"
+                                        onClick={() =>
+                                            setShowManualInput(false)
+                                        }
+                                    >
+                                        Try voice again
+                                    </button>
+                                </div>
                             </div>
+                        ) : (
+                            /* Voice recording */
+                            <>
+                                <div className="flex items-center gap-2">
+                                    {isRecording ? (
+                                        <>
+                                            <Button
+                                                size="sm"
+                                                variant="destructive"
+                                                onClick={
+                                                    handleStopAndTranscribe
+                                                }
+                                                disabled={transcribing}
+                                            >
+                                                <MicOff className="h-3.5 w-3.5 mr-1.5" />
+                                                Stop & Generate
+                                            </Button>
+                                            <span className="text-sm font-mono text-red-600 dark:text-red-400 animate-pulse">
+                                                {formatRecordingTime(
+                                                    recordingTime,
+                                                )}
+                                            </span>
+                                        </>
+                                    ) : transcribing ? (
+                                        <Button size="sm" disabled>
+                                            <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                                            Generating notes...
+                                        </Button>
+                                    ) : (
+                                        <>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={startRecording}
+                                            >
+                                                <Mic className="h-3.5 w-3.5 mr-1.5" />
+                                                Record
+                                            </Button>
+                                            <button
+                                                type="button"
+                                                className="text-xs text-muted-foreground underline hover:text-foreground"
+                                                onClick={() =>
+                                                    setShowManualInput(true)
+                                                }
+                                            >
+                                                Type instead
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
+                                {/* Live transcript preview */}
+                                {liveTranscript && (
+                                    <div className="rounded bg-muted/50 p-2 max-h-24 overflow-y-auto">
+                                        <p className="text-xs text-muted-foreground italic">
+                                            {liveTranscript}
+                                        </p>
+                                    </div>
+                                )}
+                            </>
                         )}
                     </div>
 
