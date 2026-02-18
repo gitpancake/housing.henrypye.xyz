@@ -81,6 +81,8 @@ interface UpcomingViewing {
         id: string;
         title: string;
         address: string;
+        latitude: number | null;
+        longitude: number | null;
         price: number | null;
         bedrooms: number | null;
         bathrooms: number | null;

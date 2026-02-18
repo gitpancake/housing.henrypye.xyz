@@ -17,6 +17,17 @@ import {
 } from "lucide-react";
 import { format, isToday, isTomorrow } from "date-fns";
 import Link from "next/link";
+import dynamic from "next/dynamic";
+
+const ViewingRouteMap = dynamic(
+    () => import("@/components/map/viewing-route-map"),
+    {
+        ssr: false,
+        loading: () => (
+            <div className="h-[200px] rounded-lg border bg-muted animate-pulse" />
+        ),
+    },
+);
 
 interface ViewingScore {
     aiOverallScore: number | null;
@@ -28,6 +39,8 @@ interface ViewingListing {
     id: string;
     title: string;
     address: string;
+    latitude: number | null;
+    longitude: number | null;
     price: number | null;
     bedrooms: number | null;
     bathrooms: number | null;
@@ -118,6 +131,24 @@ function ViewingDayCard({
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+                {/* Route map */}
+                {(() => {
+                    const stops = viewings
+                        .filter(
+                            (v) =>
+                                v.listing.latitude != null &&
+                                v.listing.longitude != null,
+                        )
+                        .map((v) => ({
+                            label: v.listing.title,
+                            time: format(new Date(v.scheduledAt), "h:mm a"),
+                            lat: v.listing.latitude!,
+                            lng: v.listing.longitude!,
+                        }));
+                    if (stops.length < 2) return null;
+                    return <ViewingRouteMap stops={stops} />;
+                })()}
+
                 {viewings.map((viewing, idx) => {
                     const dt = new Date(viewing.scheduledAt);
                     const listing = viewing.listing;

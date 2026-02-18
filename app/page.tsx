@@ -128,6 +128,8 @@ export default async function HomePage() {
                     id: true,
                     title: true,
                     address: true,
+                    latitude: true,
+                    longitude: true,
                     price: true,
                     bedrooms: true,
                     bathrooms: true,
