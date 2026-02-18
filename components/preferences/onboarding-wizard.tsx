@@ -227,7 +227,7 @@ export function OnboardingWizard({
                         <CardDescription className="text-base">
                             {isEditing
                                 ? "Update what matters to you in your next apartment."
-                                : "Let's figure out what matters to you in your next apartment in Vancouver."}
+                                : "Let's figure out what matters to you in your next apartment."}
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="text-center">

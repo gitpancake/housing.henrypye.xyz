@@ -87,7 +87,7 @@ export function AppShell({ children, user }: AppShellProps) {
                     Nest Finder
                 </Link>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                    Vancouver Apartment Search
+                    Apartment Search
                 </p>
             </div>
 

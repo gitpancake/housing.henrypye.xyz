@@ -165,7 +165,7 @@ export function DashboardContent({
                 <div>
                     <h1 className="text-2xl font-bold">Dashboard</h1>
                     <p className="text-muted-foreground">
-                        Your Vancouver apartment search at a glance
+                        Your apartment search at a glance
                     </p>
                 </div>
                 <Link href="/listings/new">

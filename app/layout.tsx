@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-    title: "Nest Finder — Vancouver Apartment Search",
+    title: "Nest Finder — Apartment Search",
     description:
-        "Henry & Zoey's apartment hunting companion for Vancouver & the Lower Mainland",
+        "Your apartment hunting companion — find, evaluate, and compare rentals",
 };
 
 export default function RootLayout({
