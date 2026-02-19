@@ -24,6 +24,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import { PhotoLightbox } from "@/components/ui/photo-lightbox";
 import {
     Camera,
     Plus,
@@ -105,6 +106,11 @@ export function ViewingModeDialog({
     const [uploadingNoteId, setUploadingNoteId] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const activeNoteIdRef = useRef<string | null>(null);
+
+    // Lightbox state
+    const [lightboxPhotos, setLightboxPhotos] = useState<string[]>([]);
+    const [lightboxIndex, setLightboxIndex] = useState(0);
+    const [lightboxOpen, setLightboxOpen] = useState(false);
 
     // Checklist state
     const [checkedBuildingItems, setCheckedBuildingItems] = useState<
@@ -703,9 +709,21 @@ export function ViewingModeDialog({
                                                     <div className="grid grid-cols-3 gap-1.5">
                                                         {photos.map(
                                                             (url, i) => (
-                                                                <div
+                                                                <button
                                                                     key={i}
-                                                                    className="rounded-lg overflow-hidden border"
+                                                                    type="button"
+                                                                    className="rounded-lg overflow-hidden border cursor-pointer"
+                                                                    onClick={() => {
+                                                                        setLightboxPhotos(
+                                                                            photos,
+                                                                        );
+                                                                        setLightboxIndex(
+                                                                            i,
+                                                                        );
+                                                                        setLightboxOpen(
+                                                                            true,
+                                                                        );
+                                                                    }}
                                                                 >
                                                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                                                     <img
@@ -715,7 +733,7 @@ export function ViewingModeDialog({
                                                                         alt={`${note.title} photo ${i + 1}`}
                                                                         className="h-20 w-full object-cover"
                                                                     />
-                                                                </div>
+                                                                </button>
                                                             ),
                                                         )}
                                                     </div>
@@ -795,6 +813,12 @@ export function ViewingModeDialog({
                     </Button>
                 </div>
             </DialogContent>
+            <PhotoLightbox
+                photos={lightboxPhotos}
+                initialIndex={lightboxIndex}
+                open={lightboxOpen}
+                onClose={() => setLightboxOpen(false)}
+            />
         </Dialog>
     );
 }

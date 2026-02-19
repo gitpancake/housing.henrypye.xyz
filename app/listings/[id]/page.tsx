@@ -47,6 +47,7 @@ import dynamic from "next/dynamic";
 import { PageWrapper } from "@/components/layout/page-wrapper";
 import { ExpenseCalculator } from "@/components/listings/expense-calculator";
 import { ViewingModeDialog } from "@/components/calendar/viewing-mode-dialog";
+import { PhotoLightbox } from "@/components/ui/photo-lightbox";
 import { calculateTakeHome } from "@/lib/tax";
 
 const ListingMap = dynamic(
@@ -133,6 +134,8 @@ export default function ListingDetailPage() {
         null,
     );
     const [viewingModeOpen, setViewingModeOpen] = useState(false);
+    const [lightboxOpen, setLightboxOpen] = useState(false);
+    const [lightboxIndex, setLightboxIndex] = useState(0);
     const [combinedMonthlyTakeHome, setCombinedMonthlyTakeHome] = useState<
         number | null
     >(null);
@@ -382,9 +385,14 @@ export default function ListingDetailPage() {
                     {photos.length > 0 && (
                         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                             {photos.map((url, i) => (
-                                <div
+                                <button
                                     key={i}
-                                    className="rounded-lg overflow-hidden border"
+                                    type="button"
+                                    className="rounded-lg overflow-hidden border cursor-pointer"
+                                    onClick={() => {
+                                        setLightboxIndex(i);
+                                        setLightboxOpen(true);
+                                    }}
                                 >
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img
@@ -392,7 +400,7 @@ export default function ListingDetailPage() {
                                         alt={`Photo ${i + 1}`}
                                         className="h-48 w-full object-cover"
                                     />
-                                </div>
+                                </button>
                             ))}
                         </div>
                     )}
@@ -777,6 +785,12 @@ export default function ListingDetailPage() {
                 onClose={() => setViewingModeOpen(false)}
                 viewingId={selectedViewingId}
                 listingTitle={listing?.title || ""}
+            />
+            <PhotoLightbox
+                photos={photos}
+                initialIndex={lightboxIndex}
+                open={lightboxOpen}
+                onClose={() => setLightboxOpen(false)}
             />
         </PageWrapper>
     );
