@@ -20,20 +20,7 @@ async function main() {
     },
   })
 
-  // Create zoey user with a default password
-  const zoeyHash = await bcrypt.hash("zoey2026!", 12)
-  await prisma.user.upsert({
-    where: { username: "zoey" },
-    update: {},
-    create: {
-      username: "zoey",
-      passwordHash: zoeyHash,
-      displayName: "Zoey",
-      isAdmin: false,
-    },
-  })
-
-  console.log("Seeded users: henry (admin), zoey")
+  console.log("Seeded admin user:", adminUsername)
 }
 
 main()
