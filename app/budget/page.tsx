@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { PageWrapper } from "@/components/layout/page-wrapper";
 import { BudgetView } from "@/components/budget/budget-view";
+import { useCurrentUser } from "@/lib/hooks";
 
 interface BudgetUser {
   id: string;
@@ -15,19 +16,14 @@ interface BudgetUser {
 }
 
 export default function BudgetPage() {
+  const { userId: currentUserId } = useCurrentUser();
   const [users, setUsers] = useState<BudgetUser[]>([]);
-  const [currentUserId, setCurrentUserId] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([
-      fetch("/api/budget").then((r) => r.json()),
-      fetch("/api/auth/me").then((r) => r.json()),
-    ])
-      .then(([budgetData, meData]) => {
-        setUsers(budgetData.users || []);
-        setCurrentUserId(meData.user?.id || "");
-      })
+    fetch("/api/budget")
+      .then((r) => r.json())
+      .then((data) => setUsers(data.users || []))
       .finally(() => setLoading(false));
   }, []);
 

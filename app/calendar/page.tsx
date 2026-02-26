@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { PageWrapper } from "@/components/layout/page-wrapper";
 import { CalendarView } from "@/components/calendar/calendar-view";
 import type { TodoData } from "@/components/calendar/todo-dialog";
+import { useCurrentUser, useListings } from "@/lib/hooks";
 
 interface ViewingData {
     id: string;
@@ -21,51 +22,33 @@ interface ViewingData {
     user: { id: string; displayName: string };
 }
 
-interface ListingOption {
-    id: string;
-    title: string;
-    address: string;
-    price: number | null;
-}
-
 export default function CalendarPage() {
+    const { userId: currentUserId } = useCurrentUser();
+    const { listings: allListings, loading: listingsLoading } = useListings();
     const [viewings, setViewings] = useState<ViewingData[]>([]);
     const [todos, setTodos] = useState<TodoData[]>([]);
-    const [listings, setListings] = useState<ListingOption[]>([]);
-    const [currentUserId, setCurrentUserId] = useState("");
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         Promise.all([
             fetch("/api/viewings").then((r) => r.json()),
-            fetch("/api/listings").then((r) => r.json()),
-            fetch("/api/auth/me").then((r) => r.json()),
             fetch("/api/todos").then((r) => r.json()),
         ])
-            .then(([viewingsData, listingsData, meData, todosData]) => {
+            .then(([viewingsData, todosData]) => {
                 setViewings(viewingsData.viewings || []);
                 setTodos(todosData.todos || []);
-                setListings(
-                    (listingsData.listings || []).map(
-                        (l: {
-                            id: string;
-                            title: string;
-                            address: string;
-                            price: number | null;
-                        }) => ({
-                            id: l.id,
-                            title: l.title,
-                            address: l.address,
-                            price: l.price,
-                        }),
-                    ),
-                );
-                setCurrentUserId(meData.user?.id || "");
             })
             .finally(() => setLoading(false));
     }, []);
 
-    if (loading) {
+    const listings = allListings.map((l) => ({
+        id: l.id,
+        title: l.title,
+        address: l.address,
+        price: l.price,
+    }));
+
+    if (loading || listingsLoading) {
         return (
             <PageWrapper>
                 <div className="flex min-h-[50vh] items-center justify-center">

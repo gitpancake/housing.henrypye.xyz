@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import dynamic from "next/dynamic";
-import type { Listing } from "@/types";
+import { useListings } from "@/lib/hooks";
 
 const ListingsMap = dynamic(() => import("@/components/map/listings-map"), {
     ssr: false,
@@ -17,15 +16,7 @@ const ListingsMap = dynamic(() => import("@/components/map/listings-map"), {
 });
 
 export default function MapPage() {
-    const [listings, setListings] = useState<Listing[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        fetch("/api/listings")
-            .then((res) => res.json())
-            .then((data) => setListings(data.listings || []))
-            .finally(() => setLoading(false));
-    }, []);
+    const { listings, loading } = useListings();
 
     const mappedCount = listings.filter(
         (l) => l.latitude && l.longitude,

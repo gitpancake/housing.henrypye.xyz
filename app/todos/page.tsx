@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { PageWrapper } from "@/components/layout/page-wrapper";
+import { useCurrentUser } from "@/lib/hooks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,8 +23,8 @@ import { format, isPast, startOfDay } from "date-fns";
 import { TodoDialog, type TodoData } from "@/components/calendar/todo-dialog";
 
 export default function TodosPage() {
+  const { userId: currentUserId } = useCurrentUser();
   const [todos, setTodos] = useState<TodoData[]>([]);
-  const [currentUserId, setCurrentUserId] = useState("");
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedTodo, setSelectedTodo] = useState<TodoData | null>(null);
@@ -37,14 +38,9 @@ export default function TodosPage() {
   }, []);
 
   useEffect(() => {
-    Promise.all([
-      fetch("/api/todos").then((r) => r.json()),
-      fetch("/api/auth/me").then((r) => r.json()),
-    ])
-      .then(([todosData, meData]) => {
-        setTodos(todosData.todos || []);
-        setCurrentUserId(meData.user?.id || "");
-      })
+    fetch("/api/todos")
+      .then((r) => r.json())
+      .then((data) => setTodos(data.todos || []))
       .finally(() => setLoading(false));
   }, []);
 

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useListings } from "@/lib/hooks";
 import { ListingCard } from "@/components/listings/listing-card";
 import { PlanViewingDayDialog } from "@/components/listings/plan-viewing-day-dialog";
 import { Button } from "@/components/ui/button";
@@ -35,20 +36,12 @@ type SortOption = "newest" | "price-asc" | "price-desc" | "score-avg";
 type ViewMode = "grid" | "by-area";
 
 export default function ListingsPage() {
-    const [listings, setListings] = useState<Listing[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { listings, loading, refetch } = useListings();
     const [sort, setSort] = useState<SortOption>("score-avg");
     const [viewMode, setViewMode] = useState<ViewMode>("grid");
     const [evaluatingAll, setEvaluatingAll] = useState(false);
     const [planArea, setPlanArea] = useState<string | null>(null);
     const [planListings, setPlanListings] = useState<Listing[]>([]);
-
-    useEffect(() => {
-        fetch("/api/listings")
-            .then((res) => res.json())
-            .then((data) => setListings(data.listings || []))
-            .finally(() => setLoading(false));
-    }, []);
 
     const sorted = [...listings].sort((a, b) => {
         switch (sort) {
@@ -106,9 +99,7 @@ export default function ListingsPage() {
             toast.success(
                 `Re-evaluated ${evaluated} scores${failed ? ` (${failed} failed)` : ""}`,
             );
-            const listingsRes = await fetch("/api/listings");
-            const data = await listingsRes.json();
-            setListings(data.listings || []);
+            await refetch();
         } catch {
             toast.error("Batch evaluation failed");
         } finally {
