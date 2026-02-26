@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { getSession } from "@/lib/auth"
 import { prisma } from "@/lib/db"
+import { ACTIVE_STATUSES } from "@/lib/listing-status"
 import { AppShell } from "@/components/layout/app-shell"
 import { CompareView } from "@/components/compare/compare-view"
 
@@ -16,7 +17,7 @@ export default async function ComparePage() {
   if (!user) redirect("/login")
 
   const listings = await prisma.listing.findMany({
-    where: { status: { in: ["ACTIVE", "FAVORITE", "SELECTED"] } },
+    where: { status: { in: [...ACTIVE_STATUSES] } },
     include: {
       addedByUser: { select: { id: true, displayName: true } },
       scores: {

@@ -17,6 +17,7 @@ import {
     RefreshCw,
 } from "lucide-react";
 import { scoreColor, getEffectiveScore } from "@/lib/scores";
+import { isActiveListing } from "@/lib/listing-status";
 import type { Listing } from "@/types";
 import { AreaRecommendations } from "./area-recommendations";
 import { ViewingDayBanner } from "./viewing-day-banner";
@@ -105,7 +106,7 @@ export function DashboardContent({
 }: DashboardContentProps) {
     const [generatingRecs, setGeneratingRecs] = useState(false);
     const activeListings = listings.filter(
-        (l) => l.status === "ACTIVE" || l.status === "FAVORITE" || l.status === "SELECTED",
+        (l) => isActiveListing(l.status),
     );
     const favorites = listings.filter((l) => l.status === "FAVORITE");
 

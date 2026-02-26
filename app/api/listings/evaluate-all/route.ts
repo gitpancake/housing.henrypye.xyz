@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { evaluateListing } from "@/lib/ai/evaluate-listing";
+import { ACTIVE_STATUSES } from "@/lib/listing-status";
 
 export async function POST() {
     const session = await getSession();
@@ -10,7 +11,7 @@ export async function POST() {
     }
 
     const listings = await prisma.listing.findMany({
-        where: { status: { in: ["ACTIVE", "FAVORITE", "SELECTED"] } },
+        where: { status: { in: [...ACTIVE_STATUSES] } },
     });
 
     const usersWithPrefs = await prisma.user.findMany({
