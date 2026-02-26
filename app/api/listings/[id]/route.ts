@@ -52,42 +52,58 @@ export async function PUT(
     const { id } = await params;
     const data = await request.json();
 
-    // Auto-geocode if address provided but no coordinates
-    let latitude = data.latitude ? parseFloat(data.latitude) : null;
-    let longitude = data.longitude ? parseFloat(data.longitude) : null;
-    if (data.address && !latitude && !longitude) {
-        const coords = await geocodeAddress(data.address);
-        if (coords) {
-            latitude = coords.lat;
-            longitude = coords.lng;
+    // Build update object with only provided fields
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const update: Record<string, any> = {};
+
+    if ("title" in data) update.title = data.title;
+    if ("description" in data) update.description = data.description;
+    if ("url" in data) update.url = data.url;
+    if ("price" in data) update.price = data.price ? parseInt(data.price) : null;
+    if ("bedrooms" in data) update.bedrooms = data.bedrooms ? parseInt(data.bedrooms) : null;
+    if ("bathrooms" in data) update.bathrooms = data.bathrooms ? parseInt(data.bathrooms) : null;
+    if ("petFriendly" in data) update.petFriendly = data.petFriendly;
+    if ("squareFeet" in data) update.squareFeet = data.squareFeet ? parseInt(data.squareFeet) : null;
+    if ("contactPhone" in data) update.contactPhone = data.contactPhone || null;
+    if ("parking" in data) update.parking = data.parking || null;
+    if ("laundry" in data) update.laundry = data.laundry || null;
+    if ("yearBuilt" in data) update.yearBuilt = data.yearBuilt ? parseInt(data.yearBuilt) : null;
+    if ("availableDate" in data) update.availableDate = data.availableDate || null;
+    if ("neighbourhood" in data) update.neighbourhood = data.neighbourhood || null;
+    if ("photos" in data) update.photos = data.photos;
+    if ("notes" in data) update.notes = data.notes;
+    if ("status" in data) update.status = data.status;
+    if ("scrapedContent" in data) update.scrapedContent = data.scrapedContent ?? null;
+
+    // Handle address + geocoding: only re-geocode when address actually changed
+    if ("address" in data) {
+        update.address = data.address;
+
+        if ("latitude" in data && "longitude" in data) {
+            update.latitude = data.latitude ? parseFloat(data.latitude) : null;
+            update.longitude = data.longitude ? parseFloat(data.longitude) : null;
+        } else {
+            // Check if address changed before geocoding
+            const existing = await prisma.listing.findUnique({
+                where: { id },
+                select: { address: true },
+            });
+            if (data.address && data.address !== existing?.address) {
+                const coords = await geocodeAddress(data.address);
+                if (coords) {
+                    update.latitude = coords.lat;
+                    update.longitude = coords.lng;
+                }
+            }
         }
+    } else if ("latitude" in data || "longitude" in data) {
+        if ("latitude" in data) update.latitude = data.latitude ? parseFloat(data.latitude) : null;
+        if ("longitude" in data) update.longitude = data.longitude ? parseFloat(data.longitude) : null;
     }
 
     const listing = await prisma.listing.update({
         where: { id },
-        data: {
-            title: data.title,
-            description: data.description,
-            url: data.url,
-            address: data.address,
-            latitude,
-            longitude,
-            price: data.price ? parseInt(data.price) : null,
-            bedrooms: data.bedrooms ? parseInt(data.bedrooms) : null,
-            bathrooms: data.bathrooms ? parseInt(data.bathrooms) : null,
-            petFriendly: data.petFriendly,
-            squareFeet: data.squareFeet ? parseInt(data.squareFeet) : null,
-            contactPhone: data.contactPhone || null,
-            parking: data.parking || null,
-            laundry: data.laundry || null,
-            yearBuilt: data.yearBuilt ? parseInt(data.yearBuilt) : null,
-            availableDate: data.availableDate || null,
-            neighbourhood: data.neighbourhood || null,
-            photos: data.photos,
-            notes: data.notes,
-            status: data.status,
-            scrapedContent: data.scrapedContent ?? null,
-        },
+        data: update,
     });
 
     return NextResponse.json({ listing });
