@@ -4,29 +4,16 @@ import { useState } from "react";
 import { useListings } from "@/lib/hooks";
 import { ListingCard } from "@/components/listings/listing-card";
 import { PlanViewingDayDialog } from "@/components/listings/plan-viewing-day-dialog";
-import { Button } from "@/components/ui/button";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
 import {
     Accordion,
     AccordionContent,
     AccordionItem,
     AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import {
-    Plus,
     RefreshCw,
-    LayoutGrid,
-    MapPin,
     CalendarPlus,
-    Archive,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageWrapper } from "@/components/layout/page-wrapper";
@@ -119,84 +106,64 @@ export default function ListingsPage() {
 
     return (
         <PageWrapper>
-            <div className="mx-auto max-w-6xl px-4 py-8">
+            <div className="p-8">
                 <div className="flex items-center justify-between mb-6">
                     <div>
-                        <h1 className="text-2xl font-bold">Listings</h1>
-                        <p className="text-muted-foreground">
-                            {activeListings.length} active apartment
-                            {activeListings.length !== 1 ? "s" : ""}
+                        <h1 className="text-lg font-semibold">Listings</h1>
+                        <p className="text-xs text-zinc-500 mt-0.5">
+                            {activeListings.length} active
                             {archivedListings.length > 0 && (
                                 <span> · {archivedListings.length} archived</span>
                             )}
                         </p>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <div className="flex rounded-md border">
-                            <Button
-                                variant={
-                                    viewMode === "grid" ? "secondary" : "ghost"
-                                }
-                                size="sm"
-                                className="rounded-r-none"
+                    <div className="flex items-center gap-2">
+                        <div className="flex rounded-md border border-zinc-200 bg-white p-0.5 gap-0.5">
+                            <button
+                                className={`rounded px-2.5 py-1 text-xs transition-colors ${
+                                    viewMode === "grid"
+                                        ? "bg-zinc-900 text-white"
+                                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100"
+                                }`}
                                 onClick={() => setViewMode("grid")}
                             >
-                                <LayoutGrid className="h-4 w-4 mr-1.5" />
                                 Grid
-                            </Button>
-                            <Button
-                                variant={
+                            </button>
+                            <button
+                                className={`rounded px-2.5 py-1 text-xs transition-colors ${
                                     viewMode === "by-area"
-                                        ? "secondary"
-                                        : "ghost"
-                                }
-                                size="sm"
-                                className="rounded-l-none"
+                                        ? "bg-zinc-900 text-white"
+                                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100"
+                                }`}
                                 onClick={() => setViewMode("by-area")}
                             >
-                                <MapPin className="h-4 w-4 mr-1.5" />
                                 By Area
-                            </Button>
+                            </button>
                         </div>
-                        <Select
+                        <select
                             value={sort}
-                            onValueChange={(v) => setSort(v as SortOption)}
+                            onChange={(e) => setSort(e.target.value as SortOption)}
+                            className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs outline-none focus:border-zinc-400"
                         >
-                            <SelectTrigger className="w-[160px]">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="newest">
-                                    Newest First
-                                </SelectItem>
-                                <SelectItem value="price-asc">
-                                    Price: Low-High
-                                </SelectItem>
-                                <SelectItem value="price-desc">
-                                    Price: High-Low
-                                </SelectItem>
-                                <SelectItem value="score-avg">
-                                    Best Score
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <Button
-                            variant="outline"
+                            <option value="score-avg">Best Score</option>
+                            <option value="newest">Newest First</option>
+                            <option value="price-asc">Price: Low-High</option>
+                            <option value="price-desc">Price: High-Low</option>
+                        </select>
+                        <button
                             onClick={handleEvaluateAll}
                             disabled={evaluatingAll || activeListings.length === 0}
+                            className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs text-zinc-700 hover:bg-zinc-50 transition-colors disabled:opacity-40"
                         >
                             <RefreshCw
-                                className={`h-4 w-4 mr-2 ${evaluatingAll ? "animate-spin" : ""}`}
+                                className={`h-3 w-3 ${evaluatingAll ? "animate-spin" : ""}`}
                             />
-                            {evaluatingAll
-                                ? "Evaluating..."
-                                : "Re-evaluate All"}
-                        </Button>
+                            {evaluatingAll ? "Evaluating..." : "Re-evaluate"}
+                        </button>
                         <Link href="/listings/new">
-                            <Button>
-                                <Plus className="h-4 w-4 mr-2" />
-                                Add
-                            </Button>
+                            <button className="rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-zinc-800 transition-colors">
+                                + Add
+                            </button>
                         </Link>
                     </div>
                 </div>
@@ -206,20 +173,19 @@ export default function ListingsPage() {
                         {[1, 2, 3].map((i) => (
                             <div
                                 key={i}
-                                className="h-64 rounded-lg border bg-muted animate-pulse"
+                                className="h-64 rounded-lg border border-zinc-200 bg-white animate-pulse"
                             />
                         ))}
                     </div>
                 ) : sorted.length === 0 ? (
-                    <div className="text-center py-16">
-                        <p className="text-muted-foreground mb-4">
+                    <div className="rounded-lg border border-zinc-200 bg-white p-5 py-16 text-center">
+                        <p className="text-sm text-zinc-500 mb-4">
                             No listings yet. Start adding apartments!
                         </p>
                         <Link href="/listings/new">
-                            <Button>
-                                <Plus className="h-4 w-4 mr-2" />
-                                Add Your First Listing
-                            </Button>
+                            <button className="rounded-lg bg-zinc-900 px-4 py-2 text-xs font-medium text-white hover:bg-zinc-800 transition-colors">
+                                + Add Your First Listing
+                            </button>
                         </Link>
                     </div>
                 ) : viewMode === "grid" ? (
@@ -238,28 +204,26 @@ export default function ListingsPage() {
                             <AccordionItem
                                 key={area}
                                 value={area}
-                                className="border rounded-lg px-4"
+                                className="border border-zinc-200 rounded-lg bg-white px-4"
                             >
                                 <AccordionTrigger className="hover:no-underline">
                                     <div className="flex items-center gap-3">
-                                        <span className="font-semibold text-base">
+                                        <span className="text-sm font-semibold">
                                             {area}
                                         </span>
-                                        <Badge variant="secondary">
+                                        <span className="text-xs text-zinc-400">
                                             {groupedByArea[area].length}
-                                        </Badge>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="ml-2"
+                                        </span>
+                                        <button
+                                            className="ml-2 flex items-center gap-1 rounded border border-zinc-200 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-50 transition-colors"
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 openPlanDialog(area);
                                             }}
                                         >
-                                            <CalendarPlus className="h-3.5 w-3.5 mr-1.5" />
+                                            <CalendarPlus className="h-3 w-3" />
                                             Plan Viewing Day
-                                        </Button>
+                                        </button>
                                     </div>
                                 </AccordionTrigger>
                                 <AccordionContent>
@@ -276,35 +240,34 @@ export default function ListingsPage() {
                         ))}
                     </Accordion>
                 )}
-            </div>
 
-            {/* Archived listings */}
-            {!loading && archivedListings.length > 0 && (
-                <div className="mx-auto max-w-6xl px-4 pb-8">
-                    <Accordion type="single" collapsible>
-                        <AccordionItem value="archived" className="border rounded-lg px-4">
-                            <AccordionTrigger className="hover:no-underline">
-                                <div className="flex items-center gap-3">
-                                    <Archive className="h-4 w-4 text-muted-foreground" />
-                                    <span className="font-semibold text-base text-muted-foreground">
-                                        Archived
-                                    </span>
-                                    <Badge variant="secondary">
-                                        {archivedListings.length}
-                                    </Badge>
-                                </div>
-                            </AccordionTrigger>
-                            <AccordionContent>
-                                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 pt-2">
-                                    {archivedListings.map((listing) => (
-                                        <ListingCard key={listing.id} listing={listing} />
-                                    ))}
-                                </div>
-                            </AccordionContent>
-                        </AccordionItem>
-                    </Accordion>
-                </div>
-            )}
+                {/* Archived listings */}
+                {!loading && archivedListings.length > 0 && (
+                    <div className="mt-6">
+                        <Accordion type="single" collapsible>
+                            <AccordionItem value="archived" className="border border-zinc-200 rounded-lg bg-white px-4">
+                                <AccordionTrigger className="hover:no-underline">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm font-medium text-zinc-400">
+                                            Archived
+                                        </span>
+                                        <span className="text-xs text-zinc-300">
+                                            {archivedListings.length}
+                                        </span>
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent>
+                                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 pt-2">
+                                        {archivedListings.map((listing) => (
+                                            <ListingCard key={listing.id} listing={listing} />
+                                        ))}
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
+                    </div>
+                )}
+            </div>
 
             {planArea && (
                 <PlanViewingDayDialog

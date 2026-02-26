@@ -1,9 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { MapPin, Bed, Bath, DollarSign, User } from "lucide-react";
+import { MapPin, Bed, Bath } from "lucide-react";
 import { scoreColor, getEffectiveScore } from "@/lib/scores";
 import type { Listing } from "@/types";
 
@@ -16,9 +14,13 @@ export function ListingCard({ listing }: ListingCardProps) {
 
     return (
         <Link href={`/listings/${listing.id}`}>
-            <Card className={`overflow-hidden hover:shadow-md transition-shadow h-full${listing.status === "SELECTED" ? " ring-2 ring-green-500" : ""}${listing.status === "ARCHIVED" ? " opacity-60" : ""}`}>
+            <div
+                className={`rounded-lg border border-zinc-200 bg-white overflow-hidden hover:shadow-sm transition-shadow h-full${
+                    listing.status === "SELECTED" ? " ring-2 ring-green-500" : ""
+                }${listing.status === "ARCHIVED" ? " opacity-60" : ""}`}
+            >
                 {photo && (
-                    <div className="h-40 overflow-hidden">
+                    <div className="h-36 overflow-hidden">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                             src={photo}
@@ -27,90 +29,86 @@ export function ListingCard({ listing }: ListingCardProps) {
                         />
                     </div>
                 )}
-                <CardHeader className="pb-2">
+                <div className="p-4 space-y-2.5">
                     <div className="flex items-start justify-between gap-2">
-                        <CardTitle className="text-base line-clamp-2">
+                        <h3 className="text-sm font-semibold line-clamp-2 text-zinc-900">
                             {listing.title}
-                        </CardTitle>
+                        </h3>
                         {listing.status === "FAVORITE" && (
-                            <Badge variant="default" className="shrink-0">
-                                Fav
-                            </Badge>
+                            <span className="shrink-0 text-[10px] font-medium text-amber-600">
+                                fav
+                            </span>
                         )}
                         {listing.status === "SELECTED" && (
-                            <Badge className="shrink-0 bg-green-600 text-white">
-                                Selected
-                            </Badge>
+                            <span className="shrink-0 text-[10px] font-medium text-green-600">
+                                selected
+                            </span>
                         )}
                         {listing.status === "ARCHIVED" && (
-                            <Badge variant="secondary" className="shrink-0">
-                                Archived
-                            </Badge>
+                            <span className="shrink-0 text-[10px] text-zinc-400">
+                                archived
+                            </span>
                         )}
                     </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
+
                     {listing.address && (
-                        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                            <MapPin className="h-3.5 w-3.5 shrink-0" />
+                        <div className="flex items-center gap-1 text-xs text-zinc-500">
+                            <MapPin className="h-3 w-3 shrink-0" />
                             <span className="line-clamp-1">
                                 {listing.address}
                             </span>
                         </div>
                     )}
+
                     {listing.neighbourhood && (
-                        <Badge variant="outline" className="text-xs w-fit">
+                        <span className="inline-block text-[10px] text-zinc-500 border border-zinc-200 rounded px-1.5 py-0.5">
                             {listing.neighbourhood}
-                        </Badge>
+                        </span>
                     )}
 
-                    <div className="flex flex-wrap gap-3 text-sm">
+                    <div className="flex flex-wrap gap-3 text-xs text-zinc-700">
                         {listing.price && (
-                            <span className="flex items-center gap-1">
-                                <DollarSign className="h-3.5 w-3.5" />
-                                {listing.price.toLocaleString()}/mo
+                            <span className="font-mono">
+                                ${listing.price.toLocaleString()}/mo
                             </span>
                         )}
                         {listing.bedrooms != null && (
                             <span className="flex items-center gap-1">
-                                <Bed className="h-3.5 w-3.5" />
+                                <Bed className="h-3 w-3 text-zinc-400" />
                                 {listing.bedrooms} bed
                             </span>
                         )}
                         {listing.bathrooms != null && (
                             <span className="flex items-center gap-1">
-                                <Bath className="h-3.5 w-3.5" />
+                                <Bath className="h-3 w-3 text-zinc-400" />
                                 {listing.bathrooms} bath
                             </span>
                         )}
                         {listing.petFriendly && (
-                            <Badge variant="secondary" className="text-xs">
-                                Pet OK
-                            </Badge>
+                            <span className="text-zinc-500">Pet OK</span>
                         )}
                     </div>
 
                     {listing.scores.length > 0 && (
-                        <div className="border-t pt-3 space-y-1">
+                        <div className="border-t border-zinc-100 pt-2.5 space-y-1">
                             {listing.scores.map((score) => {
                                 const val = getEffectiveScore(score);
                                 return (
                                     <div
                                         key={score.id}
-                                        className="flex items-center justify-between text-sm"
+                                        className="flex items-center justify-between text-xs"
                                     >
-                                        <span className="flex items-center gap-1.5 text-muted-foreground">
-                                            <User className="h-3 w-3" />
+                                        <span className="text-zinc-500">
                                             {score.user.displayName}
                                         </span>
                                         {val != null ? (
                                             <span
-                                                className={`font-semibold tabular-nums ${scoreColor(val)}`}
+                                                className={`font-mono font-semibold ${scoreColor(val)}`}
                                             >
                                                 {val.toFixed(1)}/10
                                             </span>
                                         ) : (
-                                            <span className="text-muted-foreground text-xs">
+                                            <span className="text-zinc-300 text-[10px]">
                                                 Pending...
                                             </span>
                                         )}
@@ -120,11 +118,11 @@ export function ListingCard({ listing }: ListingCardProps) {
                         </div>
                     )}
 
-                    <div className="text-xs text-muted-foreground pt-1">
+                    <div className="text-[10px] text-zinc-400 pt-0.5">
                         Added by {listing.addedByUser.displayName}
                     </div>
-                </CardContent>
-            </Card>
+                </div>
+            </div>
         </Link>
     );
 }

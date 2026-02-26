@@ -2,9 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
     AlertDialog,
@@ -25,8 +22,6 @@ import {
     Bath,
     Ruler,
     Star,
-    Pencil,
-    Trash2,
     Phone,
     Home,
 } from "lucide-react";
@@ -46,7 +41,7 @@ const ListingMap = dynamic(
     {
         ssr: false,
         loading: () => (
-            <div className="h-[250px] rounded-lg border bg-muted animate-pulse" />
+            <div className="h-[250px] rounded-lg border border-zinc-200 bg-zinc-50 animate-pulse" />
         ),
     },
 );
@@ -191,7 +186,7 @@ export default function ListingDetailPage() {
     if (loading) {
         return (
             <div className="flex min-h-screen items-center justify-center">
-                <p className="text-muted-foreground">Loading...</p>
+                <p className="text-sm text-zinc-400">Loading...</p>
             </div>
         );
     }
@@ -199,7 +194,7 @@ export default function ListingDetailPage() {
     if (!listing) {
         return (
             <div className="flex min-h-screen items-center justify-center">
-                <p className="text-muted-foreground">Listing not found</p>
+                <p className="text-sm text-zinc-400">Listing not found</p>
             </div>
         );
     }
@@ -208,30 +203,30 @@ export default function ListingDetailPage() {
 
     return (
         <PageWrapper>
-            <div className="mx-auto max-w-4xl px-4 py-8">
-                <div className="flex items-center justify-between mb-4">
-                    <Button variant="ghost" onClick={() => router.back()}>
-                        <ArrowLeft className="h-4 w-4 mr-2" />
+            <div className="max-w-4xl p-8">
+                <div className="flex items-center justify-between mb-6">
+                    <button
+                        onClick={() => router.back()}
+                        className="text-xs text-zinc-500 hover:text-zinc-900 transition-colors flex items-center gap-1"
+                    >
+                        <ArrowLeft className="h-3 w-3" />
                         Back
-                    </Button>
+                    </button>
                     <div className="flex items-center gap-2">
                         <Link href={`/listings/${id}/edit`}>
-                            <Button variant="outline" size="sm">
-                                <Pencil className="h-4 w-4 mr-2" />
+                            <button className="rounded border border-zinc-200 px-2.5 py-1 text-xs text-zinc-700 hover:bg-zinc-50 transition-colors">
                                 Edit
-                            </Button>
+                            </button>
                         </Link>
                         {(listing.status === "ACTIVE" || listing.status === "FAVORITE") && (
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                    <Button
-                                        size="sm"
-                                        className="bg-green-600 hover:bg-green-700 text-white"
+                                    <button
+                                        className="rounded bg-green-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-green-700 transition-colors disabled:opacity-40"
                                         disabled={selecting}
                                     >
-                                        <Home className="h-4 w-4 mr-2" />
                                         {selecting ? "Selecting..." : "This is the one!"}
-                                    </Button>
+                                    </button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                     <AlertDialogHeader>
@@ -261,14 +256,12 @@ export default function ListingDetailPage() {
                         {listing.status !== "SELECTED" && (
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                    <Button
-                                        variant="destructive"
-                                        size="sm"
+                                    <button
+                                        className="text-xs text-red-400 hover:text-red-500 transition-colors disabled:opacity-40"
                                         disabled={deleting}
                                     >
-                                        <Trash2 className="h-4 w-4 mr-2" />
                                         {deleting ? "Deleting..." : "Delete"}
-                                    </Button>
+                                    </button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                     <AlertDialogHeader>
@@ -282,9 +275,7 @@ export default function ListingDetailPage() {
                                         </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
-                                        <AlertDialogCancel>
-                                            Cancel
-                                        </AlertDialogCancel>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
                                         <AlertDialogAction onClick={handleDelete}>
                                             Delete
                                         </AlertDialogAction>
@@ -298,22 +289,20 @@ export default function ListingDetailPage() {
                 <div className="space-y-6">
                     {/* Selected banner */}
                     {listing.status === "SELECTED" && (
-                        <div className="rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-4 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <Home className="h-5 w-5 text-green-600" />
+                        <div className="rounded-lg bg-green-50 border border-green-200 p-4 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Home className="h-4 w-4 text-green-600" />
                                 <div>
-                                    <p className="font-semibold text-green-800 dark:text-green-200">
+                                    <p className="text-sm font-medium text-green-800">
                                         Your new home!
                                     </p>
-                                    <p className="text-sm text-green-600 dark:text-green-400">
+                                    <p className="text-xs text-green-600">
                                         This listing has been selected as your chosen apartment.
                                     </p>
                                 </div>
                             </div>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-muted-foreground"
+                            <button
+                                className="text-xs text-zinc-500 hover:text-zinc-900 underline transition-colors"
                                 onClick={async () => {
                                     const res = await fetch(
                                         `/api/listings/${id}`,
@@ -340,21 +329,19 @@ export default function ListingDetailPage() {
                                 }}
                             >
                                 Undo selection
-                            </Button>
+                            </button>
                         </div>
                     )}
 
                     {/* Header */}
                     <div>
                         <div className="flex items-start justify-between gap-4">
-                            <h1 className="text-2xl font-bold">
+                            <h1 className="text-lg font-semibold">
                                 {listing.title}
                             </h1>
                             {listing.status !== "SELECTED" && (
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="shrink-0"
+                                <button
+                                    className="shrink-0 p-1"
                                     onClick={async () => {
                                         const newStatus =
                                             listing.status === "FAVORITE"
@@ -387,16 +374,16 @@ export default function ListingDetailPage() {
                                     }}
                                 >
                                     <Star
-                                        className={`h-5 w-5 ${
+                                        className={`h-4 w-4 ${
                                             listing.status === "FAVORITE"
                                                 ? "fill-yellow-400 text-yellow-400"
-                                                : "text-muted-foreground"
+                                                : "text-zinc-300"
                                         }`}
                                     />
-                                </Button>
+                                </button>
                             )}
                         </div>
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <p className="text-xs text-zinc-400 mt-1">
                             Added by {listing.addedByUser.displayName} on{" "}
                             {new Date(listing.createdAt).toLocaleDateString()}
                         </p>
@@ -409,7 +396,7 @@ export default function ListingDetailPage() {
                                 <button
                                     key={i}
                                     type="button"
-                                    className="rounded-lg overflow-hidden border cursor-pointer"
+                                    className="rounded-lg overflow-hidden border border-zinc-200 cursor-pointer"
                                     onClick={() => {
                                         setLightboxIndex(i);
                                         setLightboxOpen(true);
@@ -419,7 +406,7 @@ export default function ListingDetailPage() {
                                     <img
                                         src={url}
                                         alt={`Photo ${i + 1}`}
-                                        className="h-48 w-full object-cover"
+                                        className="h-44 w-full object-cover"
                                     />
                                 </button>
                             ))}
@@ -427,34 +414,32 @@ export default function ListingDetailPage() {
                     )}
 
                     {/* Quick stats */}
-                    <div className="flex flex-wrap gap-4">
+                    <div className="flex flex-wrap gap-4 text-sm text-zinc-700">
                         {listing.price && (
-                            <div className="flex items-center gap-1.5 text-lg font-semibold">
-                                <span>
-                                    ${listing.price.toLocaleString()}/mo
-                                </span>
-                            </div>
+                            <span className="font-mono font-semibold">
+                                ${listing.price.toLocaleString()}/mo
+                            </span>
                         )}
                         {listing.bedrooms != null && (
-                            <div className="flex items-center gap-1.5">
-                                <Bed className="h-4 w-4 text-muted-foreground" />
-                                <span>{listing.bedrooms} bed</span>
-                            </div>
+                            <span className="flex items-center gap-1">
+                                <Bed className="h-3.5 w-3.5 text-zinc-400" />
+                                {listing.bedrooms} bed
+                            </span>
                         )}
                         {listing.bathrooms != null && (
-                            <div className="flex items-center gap-1.5">
-                                <Bath className="h-4 w-4 text-muted-foreground" />
-                                <span>{listing.bathrooms} bath</span>
-                            </div>
+                            <span className="flex items-center gap-1">
+                                <Bath className="h-3.5 w-3.5 text-zinc-400" />
+                                {listing.bathrooms} bath
+                            </span>
                         )}
                         {listing.squareFeet && (
-                            <div className="flex items-center gap-1.5">
-                                <Ruler className="h-4 w-4 text-muted-foreground" />
-                                <span>{listing.squareFeet} sq ft</span>
-                            </div>
+                            <span className="flex items-center gap-1">
+                                <Ruler className="h-3.5 w-3.5 text-zinc-400" />
+                                {listing.squareFeet} sq ft
+                            </span>
                         )}
                         {listing.petFriendly && (
-                            <Badge variant="secondary">Pet Friendly</Badge>
+                            <span className="text-zinc-500">Pet Friendly</span>
                         )}
                     </div>
 
@@ -465,75 +450,65 @@ export default function ListingDetailPage() {
                                 href={listing.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+                                className="inline-flex items-center gap-1 text-xs text-zinc-600 hover:text-zinc-900 underline"
                             >
-                                <ExternalLink className="h-3.5 w-3.5" />
+                                <ExternalLink className="h-3 w-3" />
                                 View Original Listing
                             </a>
                         )}
                         {listing.contactPhone && (
                             <a
                                 href={`tel:${listing.contactPhone}`}
-                                className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+                                className="inline-flex items-center gap-1 text-xs text-zinc-600 hover:text-zinc-900 underline"
                             >
-                                <Phone className="h-3.5 w-3.5" />
+                                <Phone className="h-3 w-3" />
                                 {listing.contactPhone}
                             </a>
                         )}
                         {listing.contactPhone && (
-                            <Button
-                                variant="outline"
-                                size="sm"
+                            <button
                                 onClick={handleCreateCallTodo}
                                 disabled={creatingCallTodo}
+                                className="text-xs text-zinc-500 hover:text-zinc-900 underline disabled:opacity-40"
                             >
-                                <Phone className="h-4 w-4 mr-2" />
                                 {creatingCallTodo
                                     ? "Creating..."
                                     : "Add Call Todo"}
-                            </Button>
+                            </button>
                         )}
                     </div>
 
                     {/* Location */}
                     {(listing.address ||
                         (listing.latitude && listing.longitude)) && (
-                        <Card>
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-lg flex items-center gap-2">
-                                    <MapPin className="h-4 w-4" />
-                                    Location
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                                {listing.address && (
-                                    <p className="text-sm">{listing.address}</p>
-                                )}
-                                {listing.latitude && listing.longitude && (
-                                    <ListingMap
-                                        latitude={listing.latitude}
-                                        longitude={listing.longitude}
-                                        title={listing.title}
-                                    />
-                                )}
-                            </CardContent>
-                        </Card>
+                        <div className="rounded-lg border border-zinc-200 bg-white p-5">
+                            <div className="text-xs font-medium uppercase tracking-wide text-zinc-400 mb-3 flex items-center gap-1.5">
+                                <MapPin className="h-3 w-3" />
+                                Location
+                            </div>
+                            {listing.address && (
+                                <p className="text-sm text-zinc-700 mb-3">{listing.address}</p>
+                            )}
+                            {listing.latitude && listing.longitude && (
+                                <ListingMap
+                                    latitude={listing.latitude}
+                                    longitude={listing.longitude}
+                                    title={listing.title}
+                                />
+                            )}
+                        </div>
                     )}
 
                     {/* Description */}
                     {listing.description && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-lg">
-                                    Description
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="whitespace-pre-wrap text-sm">
-                                    {listing.description}
-                                </p>
-                            </CardContent>
-                        </Card>
+                        <div className="rounded-lg border border-zinc-200 bg-white p-5">
+                            <div className="text-xs font-medium uppercase tracking-wide text-zinc-400 mb-3">
+                                Description
+                            </div>
+                            <p className="whitespace-pre-wrap text-sm text-zinc-700">
+                                {listing.description}
+                            </p>
+                        </div>
                     )}
 
                     {/* Scores */}
@@ -567,16 +542,14 @@ export default function ListingDetailPage() {
 
                     {/* Notes */}
                     {listing.notes && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-lg">Notes</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-sm whitespace-pre-wrap">
-                                    {listing.notes}
-                                </p>
-                            </CardContent>
-                        </Card>
+                        <div className="rounded-lg border border-zinc-200 bg-white p-5">
+                            <div className="text-xs font-medium uppercase tracking-wide text-zinc-400 mb-3">
+                                Notes
+                            </div>
+                            <p className="text-sm text-zinc-700 whitespace-pre-wrap">
+                                {listing.notes}
+                            </p>
+                        </div>
                     )}
                 </div>
             </div>

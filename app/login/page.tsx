@@ -2,16 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -39,6 +29,7 @@ export default function LoginPage() {
 
             if (!res.ok) {
                 setError(data.error || "Login failed");
+                setPassword("");
                 return;
             }
 
@@ -55,53 +46,65 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="flex min-h-screen items-center justify-center px-4">
-            <Card className="w-full max-w-sm">
-                <CardHeader className="text-center">
-                    <CardTitle className="text-2xl">Nest Finder</CardTitle>
-                    <CardDescription>
+        <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4">
+            <div className="w-full max-w-sm rounded-xl border border-zinc-200 bg-white p-8 shadow-sm">
+                <div className="text-center mb-6">
+                    <h1 className="font-mono text-sm font-bold tracking-tight">
+                        nest finder.
+                    </h1>
+                    <p className="text-xs text-zinc-400 mt-1">
                         Sign in to your apartment search
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="username">Username</Label>
-                            <Input
-                                id="username"
-                                type="text"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                placeholder="Enter your username"
-                                autoComplete="username"
-                                required
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="password">Password</Label>
-                            <Input
-                                id="password"
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder="Enter your password"
-                                autoComplete="current-password"
-                                required
-                            />
-                        </div>
-                        {error && (
-                            <p className="text-sm text-destructive">{error}</p>
-                        )}
-                        <Button
-                            type="submit"
-                            className="w-full"
-                            disabled={loading}
+                    </p>
+                </div>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label
+                            htmlFor="username"
+                            className="block text-xs font-medium text-zinc-500 mb-1.5"
                         >
-                            {loading ? "Signing in..." : "Sign in"}
-                        </Button>
-                    </form>
-                </CardContent>
-            </Card>
+                            Username
+                        </label>
+                        <input
+                            id="username"
+                            type="text"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            placeholder="Enter your username"
+                            autoComplete="username"
+                            required
+                            className="w-full rounded-lg border border-zinc-200 px-3 py-2.5 text-sm outline-none focus:border-zinc-400 transition-colors"
+                        />
+                    </div>
+                    <div>
+                        <label
+                            htmlFor="password"
+                            className="block text-xs font-medium text-zinc-500 mb-1.5"
+                        >
+                            Password
+                        </label>
+                        <input
+                            id="password"
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="Enter your password"
+                            autoComplete="current-password"
+                            required
+                            className="w-full rounded-lg border border-zinc-200 px-3 py-2.5 text-sm outline-none focus:border-zinc-400 transition-colors"
+                        />
+                    </div>
+                    {error && (
+                        <p className="text-xs text-red-500">{error}</p>
+                    )}
+                    <button
+                        type="submit"
+                        className="w-full rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-zinc-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        disabled={loading || !username || !password}
+                    >
+                        {loading ? "Signing in..." : "Sign in"}
+                    </button>
+                </form>
+            </div>
         </div>
     );
 }

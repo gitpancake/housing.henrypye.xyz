@@ -2,25 +2,16 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
-    Plus,
-    TrendingUp,
-    Home,
-    Star,
-    ArrowRight,
     CheckCircle2,
     Circle,
-    Sparkles,
     RefreshCw,
     Search,
     MapPin,
     Bed,
     Bath,
-    DollarSign,
-    ExternalLink,
+    Home,
 } from "lucide-react";
 import {
     AlertDialog,
@@ -202,71 +193,65 @@ export function DashboardContent({
     if (selectedListing) {
         const photo = (selectedListing.photos as string[])?.[0];
         return (
-            <div className="p-4 md:p-6 space-y-6 max-w-6xl mx-auto">
-                <div>
-                    <h1 className="text-2xl font-bold">Dashboard</h1>
-                    <p className="text-muted-foreground">
-                        You&apos;ve found your place!
-                    </p>
-                </div>
+            <div className="p-8 space-y-6">
+                <h1 className="text-lg font-semibold">Dashboard</h1>
 
-                <Card className="overflow-hidden border-green-200 dark:border-green-800">
-                    <div className="bg-green-50 dark:bg-green-900/20 px-6 py-4 flex items-center gap-3 border-b border-green-200 dark:border-green-800">
-                        <Home className="h-5 w-5 text-green-600" />
-                        <p className="font-semibold text-green-800 dark:text-green-200">
+                <div className="rounded-lg border border-green-200 bg-white overflow-hidden">
+                    <div className="bg-green-50 px-5 py-3 flex items-center gap-2 border-b border-green-200">
+                        <Home className="h-4 w-4 text-green-600" />
+                        <span className="text-xs font-medium uppercase tracking-wide text-green-700">
                             Currently living at
-                        </p>
+                        </span>
                     </div>
-                    <CardContent className="pt-6">
+                    <div className="p-5">
                         <div className="flex flex-col md:flex-row gap-6">
                             {photo && (
-                                <div className="md:w-64 shrink-0">
+                                <div className="md:w-56 shrink-0">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img
                                         src={photo}
                                         alt={selectedListing.title}
-                                        className="h-48 md:h-full w-full object-cover rounded-lg"
+                                        className="h-40 md:h-full w-full object-cover rounded-lg"
                                     />
                                 </div>
                             )}
-                            <div className="flex-1 space-y-4">
+                            <div className="flex-1 space-y-3">
                                 <div>
                                     <Link
                                         href={`/listings/${selectedListing.id}`}
-                                        className="text-xl font-bold hover:underline"
+                                        className="text-sm font-semibold hover:underline"
                                     >
                                         {selectedListing.title}
                                     </Link>
                                     {selectedListing.address && (
-                                        <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-1">
-                                            <MapPin className="h-3.5 w-3.5" />
+                                        <p className="text-xs text-zinc-500 flex items-center gap-1 mt-1">
+                                            <MapPin className="h-3 w-3" />
                                             {selectedListing.address}
                                         </p>
                                     )}
                                 </div>
-                                <div className="flex flex-wrap gap-4 text-sm">
+                                <div className="flex flex-wrap gap-4 text-xs text-zinc-700">
                                     {selectedListing.price && (
-                                        <span className="flex items-center gap-1">
-                                            <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+                                        <span className="font-mono">
                                             ${selectedListing.price.toLocaleString()}/mo
                                         </span>
                                     )}
                                     {selectedListing.bedrooms != null && (
                                         <span className="flex items-center gap-1">
-                                            <Bed className="h-3.5 w-3.5 text-muted-foreground" />
+                                            <Bed className="h-3 w-3 text-zinc-400" />
                                             {selectedListing.bedrooms} bed
                                         </span>
                                     )}
                                     {selectedListing.bathrooms != null && (
                                         <span className="flex items-center gap-1">
-                                            <Bath className="h-3.5 w-3.5 text-muted-foreground" />
+                                            <Bath className="h-3 w-3 text-zinc-400" />
                                             {selectedListing.bathrooms} bath
                                         </span>
                                     )}
                                     {selectedListing.neighbourhood && (
-                                        <Badge variant="outline">
+                                        <span className="text-zinc-500">
                                             {selectedListing.neighbourhood}
-                                        </Badge>
+                                        </span>
                                     )}
                                 </div>
                                 {selectedListing.scores.length > 0 && (
@@ -274,11 +259,11 @@ export function DashboardContent({
                                         {selectedListing.scores.map((score) => {
                                             const val = getEffectiveScore(score);
                                             return val != null ? (
-                                                <div key={score.id} className="text-sm">
-                                                    <span className="text-muted-foreground">
+                                                <div key={score.id} className="text-xs">
+                                                    <span className="text-zinc-500">
                                                         {score.user.displayName}:{" "}
                                                     </span>
-                                                    <span className={`font-semibold ${scoreColor(val)}`}>
+                                                    <span className={`font-mono font-semibold ${scoreColor(val)}`}>
                                                         {val.toFixed(1)}/10
                                                     </span>
                                                 </div>
@@ -286,146 +271,113 @@ export function DashboardContent({
                                         })}
                                     </div>
                                 )}
-                                <div className="flex items-center gap-3 pt-2">
-                                    <Link href={`/listings/${selectedListing.id}`}>
-                                        <Button variant="outline" size="sm">
-                                            <ExternalLink className="h-4 w-4 mr-2" />
-                                            View Details
-                                        </Button>
-                                    </Link>
-                                </div>
+                                <Link
+                                    href={`/listings/${selectedListing.id}`}
+                                    className="inline-block text-xs text-zinc-600 hover:text-zinc-900 underline mt-1"
+                                >
+                                    View details
+                                </Link>
                             </div>
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
-                <Card>
-                    <CardContent className="py-8 text-center space-y-4">
-                        <Search className="h-10 w-10 mx-auto text-muted-foreground" />
-                        <div>
-                            <p className="font-medium">Looking for a new place?</p>
-                            <p className="text-sm text-muted-foreground mt-1">
-                                Start a new apartment search. Your current listing will be
-                                archived along with all previous listings.
-                            </p>
-                        </div>
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="outline" disabled={resetting}>
-                                    <Search className="h-4 w-4 mr-2" />
-                                    {resetting ? "Resetting..." : "Start Looking Again"}
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>
-                                        Start a new apartment search?
-                                    </AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        This will archive &quot;{selectedListing.title}&quot; and
-                                        clear your dashboard for a fresh search. All your previous
-                                        listings, viewings, and notes will be preserved in the
-                                        archived section.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={handleResetSearch}>
-                                        Start Fresh
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    </CardContent>
-                </Card>
+                <div className="rounded-lg border border-zinc-200 bg-white p-5 text-center space-y-3">
+                    <Search className="h-8 w-8 mx-auto text-zinc-300" />
+                    <p className="text-sm font-medium text-zinc-700">
+                        Looking for a new place?
+                    </p>
+                    <p className="text-xs text-zinc-500">
+                        Your current listing will be archived along with all previous listings.
+                    </p>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <button
+                                disabled={resetting}
+                                className="text-xs text-zinc-600 hover:text-zinc-900 underline disabled:opacity-40"
+                            >
+                                {resetting ? "Resetting..." : "Start looking again"}
+                            </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                    Start a new apartment search?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This will archive &quot;{selectedListing.title}&quot; and
+                                    clear your dashboard for a fresh search. All your previous
+                                    listings, viewings, and notes will be preserved in the
+                                    archived section.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleResetSearch}>
+                                    Start Fresh
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="p-4 md:p-6 space-y-6 max-w-6xl mx-auto">
+        <div className="p-8 space-y-6">
             <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold">Dashboard</h1>
-                    <p className="text-muted-foreground">
-                        Your apartment search at a glance
-                    </p>
-                </div>
+                <h1 className="text-lg font-semibold">Dashboard</h1>
                 <Link href="/listings/new">
-                    <Button>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Listing
-                    </Button>
+                    <button className="rounded-lg bg-zinc-900 px-4 py-2 text-xs font-medium text-white hover:bg-zinc-800 transition-colors">
+                        + Add Listing
+                    </button>
                 </Link>
             </div>
 
-            {/* Stats cards */}
+            {/* Summary cards */}
             <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex items-center gap-3">
-                            <div className="rounded-lg bg-primary/10 p-2">
-                                <Home className="h-5 w-5 text-primary" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold">
-                                    {activeListings.length}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                    Active Listings
-                                </p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                <div className="rounded-lg border border-zinc-200 bg-white px-4 py-4 min-w-0">
+                    <div className="text-xs font-medium uppercase tracking-wide text-zinc-400">
+                        Active
+                    </div>
+                    <div className="font-mono text-lg font-semibold mt-1">
+                        {activeListings.length}
+                    </div>
+                </div>
 
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex items-center gap-3">
-                            <div className="rounded-lg bg-yellow-100 dark:bg-yellow-900/30 p-2">
-                                <Star className="h-5 w-5 text-yellow-600" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold">
-                                    {favorites.length}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                    Favorites
-                                </p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                <div className="rounded-lg border border-zinc-200 bg-white px-4 py-4 min-w-0">
+                    <div className="text-xs font-medium uppercase tracking-wide text-zinc-400">
+                        Favorites
+                    </div>
+                    <div className="font-mono text-lg font-semibold mt-1">
+                        {favorites.length}
+                    </div>
+                </div>
 
                 {users.map((user) => {
                     const pick = topPicks[user.id];
                     return (
-                        <Card key={user.id}>
-                            <CardContent className="pt-6">
-                                <div className="flex items-center gap-3">
-                                    <div className="rounded-lg bg-green-100 dark:bg-green-900/30 p-2">
-                                        <TrendingUp className="h-5 w-5 text-green-600" />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <p className="text-xs text-muted-foreground">
-                                            {user.displayName}'s Top
-                                        </p>
-                                        {pick ? (
-                                            <p
-                                                className="text-sm font-medium truncate"
-                                                title={pick.listing.title}
-                                            >
-                                                {pick.score.toFixed(1)}/10
-                                            </p>
-                                        ) : (
-                                            <p className="text-sm text-muted-foreground">
-                                                —
-                                            </p>
-                                        )}
-                                    </div>
+                        <div
+                            key={user.id}
+                            className="rounded-lg border border-zinc-200 bg-white px-4 py-4 min-w-0"
+                        >
+                            <div className="text-xs font-medium uppercase tracking-wide text-zinc-400 truncate">
+                                {user.displayName}&apos;s Top
+                            </div>
+                            {pick ? (
+                                <div
+                                    className="font-mono text-lg font-semibold text-green-600 mt-1 truncate"
+                                    title={pick.listing.title}
+                                >
+                                    {pick.score.toFixed(1)}/10
                                 </div>
-                            </CardContent>
-                        </Card>
+                            ) : (
+                                <div className="font-mono text-lg text-zinc-300 mt-1">
+                                    —
+                                </div>
+                            )}
+                        </div>
                     );
                 })}
             </div>
@@ -433,89 +385,72 @@ export function DashboardContent({
             {/* Viewing Day Dashboard */}
             <ViewingDayBanner viewings={upcomingViewings} />
 
-            {/* Setup status — show when not everyone has prefs or no recs yet */}
+            {/* Setup status */}
             {(!allPrefsComplete || !hasRecs) && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-lg flex items-center gap-2">
-                            <Sparkles className="h-5 w-5 text-primary" />
-                            Getting Started
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="space-y-3">
-                            {userStatuses.map((u) => (
-                                <div
-                                    key={u.id}
-                                    className="flex items-center gap-3"
-                                >
-                                    {u.preferencesComplete ? (
-                                        <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 shrink-0" />
-                                    ) : (
-                                        <Circle className="h-5 w-5 text-muted-foreground shrink-0" />
+                <div className="rounded-lg border border-zinc-200 bg-white p-5">
+                    <div className="text-xs font-medium uppercase tracking-wide text-zinc-400 mb-3">
+                        Getting Started
+                    </div>
+                    <div className="space-y-2">
+                        {userStatuses.map((u) => (
+                            <div
+                                key={u.id}
+                                className="flex items-center gap-2"
+                            >
+                                {u.preferencesComplete ? (
+                                    <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
+                                ) : (
+                                    <Circle className="h-4 w-4 text-zinc-300 shrink-0" />
+                                )}
+                                <span className="text-sm text-zinc-700">
+                                    {u.displayName}
+                                    {u.preferencesComplete
+                                        ? " — preferences complete"
+                                        : " — waiting for preferences"}
+                                </span>
+                                {!u.preferencesComplete &&
+                                    u.id === currentUserId && (
+                                        <Link href="/onboarding">
+                                            <button className="text-xs text-zinc-600 hover:text-zinc-900 underline ml-2">
+                                                Complete Setup
+                                            </button>
+                                        </Link>
                                     )}
-                                    <span
-                                        className={
-                                            u.preferencesComplete
-                                                ? "text-sm"
-                                                : "text-sm text-muted-foreground"
-                                        }
-                                    >
-                                        {u.displayName}
-                                        {u.preferencesComplete
-                                            ? " — preferences complete"
-                                            : " — waiting for preferences"}
-                                    </span>
-                                    {!u.preferencesComplete &&
-                                        u.id === currentUserId && (
-                                            <Link href="/onboarding">
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                >
-                                                    Complete Setup
-                                                </Button>
-                                            </Link>
-                                        )}
-                                </div>
-                            ))}
-                        </div>
-
-                        {allPrefsComplete && !hasRecs && (
-                            <div className="rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 p-4 text-center">
-                                <p className="text-sm font-medium mb-3">
-                                    Both of you are set up! Generate AI-powered
-                                    neighbourhood recommendations based on your
-                                    combined preferences.
-                                </p>
-                                <Button
-                                    onClick={handleGenerateRecs}
-                                    disabled={generatingRecs}
-                                >
-                                    {generatingRecs ? (
-                                        <>
-                                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                                            Generating...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Sparkles className="h-4 w-4 mr-2" />
-                                            Generate Area Recommendations
-                                        </>
-                                    )}
-                                </Button>
                             </div>
-                        )}
+                        ))}
+                    </div>
 
-                        {!allPrefsComplete && (
-                            <p className="text-xs text-muted-foreground">
-                                Once everyone completes their preferences,
-                                you&apos;ll be able to generate neighbourhood
-                                recommendations.
+                    {allPrefsComplete && !hasRecs && (
+                        <div className="mt-4 rounded border border-dashed border-zinc-300 bg-zinc-50 p-4 text-center">
+                            <p className="text-sm text-zinc-700 mb-3">
+                                Both of you are set up! Generate AI-powered
+                                neighbourhood recommendations.
                             </p>
-                        )}
-                    </CardContent>
-                </Card>
+                            <button
+                                onClick={handleGenerateRecs}
+                                disabled={generatingRecs}
+                                className="rounded-lg bg-zinc-900 px-4 py-2 text-xs font-medium text-white hover:bg-zinc-800 transition-colors disabled:opacity-40"
+                            >
+                                {generatingRecs ? (
+                                    <span className="flex items-center gap-2">
+                                        <RefreshCw className="h-3 w-3 animate-spin" />
+                                        Generating...
+                                    </span>
+                                ) : (
+                                    "Generate Area Recommendations"
+                                )}
+                            </button>
+                        </div>
+                    )}
+
+                    {!allPrefsComplete && (
+                        <p className="text-xs text-zinc-400 mt-3">
+                            Once everyone completes their preferences,
+                            you&apos;ll be able to generate neighbourhood
+                            recommendations.
+                        </p>
+                    )}
+                </div>
             )}
 
             {/* Area Recommendations */}
@@ -528,142 +463,122 @@ export function DashboardContent({
                 areaNotes={areaNotes}
             />
 
-            {/* Comparison table */}
+            {/* Score comparison table */}
             {scoredListings.length > 0 && (
-                <Card>
-                    <CardHeader>
-                        <div className="flex items-center justify-between">
-                            <CardTitle className="text-lg">
-                                Score Comparison
-                            </CardTitle>
-                            <Link href="/listings">
-                                <Button variant="ghost" size="sm">
-                                    View All{" "}
-                                    <ArrowRight className="h-4 w-4 ml-1" />
-                                </Button>
-                            </Link>
+                <div className="rounded-lg border border-zinc-200 bg-white p-5">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="text-xs font-medium uppercase tracking-wide text-zinc-400">
+                            Score Comparison
                         </div>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="border-b">
-                                        <th className="text-left py-2 pr-4 font-medium">
-                                            Listing
+                        <Link
+                            href="/listings"
+                            className="text-xs text-zinc-500 hover:text-zinc-900 transition-colors"
+                        >
+                            View all →
+                        </Link>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm border-collapse">
+                            <thead>
+                                <tr>
+                                    <th className="text-left py-2 pr-4 font-medium text-xs uppercase tracking-wide text-zinc-400 border-b-2 border-zinc-200">
+                                        Listing
+                                    </th>
+                                    <th className="text-right py-2 px-3 font-medium text-xs uppercase tracking-wide text-zinc-400 border-b-2 border-zinc-200">
+                                        Price
+                                    </th>
+                                    {users.map((u) => (
+                                        <th
+                                            key={u.id}
+                                            className="text-right py-2 px-3 font-medium text-xs uppercase tracking-wide text-zinc-400 border-b-2 border-zinc-200"
+                                        >
+                                            {u.displayName}
                                         </th>
-                                        <th className="text-right py-2 px-3 font-medium">
-                                            Price
-                                        </th>
-                                        {users.map((u) => (
-                                            <th
-                                                key={u.id}
-                                                className="text-right py-2 px-3 font-medium"
-                                            >
-                                                {u.displayName}
-                                            </th>
-                                        ))}
-                                        <th className="text-right py-2 pl-3 font-medium">
-                                            Avg
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {scoredListings
-                                        .slice(0, 10)
-                                        .map(({ listing, userScores, avg }) => (
-                                            <tr
-                                                key={listing.id}
-                                                className="border-b last:border-0"
-                                            >
-                                                <td className="py-2.5 pr-4">
-                                                    <Link
-                                                        href={`/listings/${listing.id}`}
-                                                        className="hover:underline font-medium line-clamp-1"
+                                    ))}
+                                    <th className="text-right py-2 pl-3 font-medium text-xs uppercase tracking-wide text-zinc-400 border-b-2 border-zinc-200">
+                                        Avg
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {scoredListings
+                                    .slice(0, 10)
+                                    .map(({ listing, userScores, avg }) => (
+                                        <tr
+                                            key={listing.id}
+                                            className="group hover:bg-zinc-50 transition-colors"
+                                        >
+                                            <td className="py-2 pr-4 border-b border-zinc-100">
+                                                <Link
+                                                    href={`/listings/${listing.id}`}
+                                                    className="hover:underline font-medium text-sm line-clamp-1"
+                                                >
+                                                    {listing.title}
+                                                </Link>
+                                                {listing.status === "FAVORITE" && (
+                                                    <span className="ml-2 text-[10px] text-amber-600">
+                                                        fav
+                                                    </span>
+                                                )}
+                                                {listing.status === "SELECTED" && (
+                                                    <span className="ml-2 text-[10px] text-green-600">
+                                                        selected
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td className="text-right py-2 px-3 font-mono text-sm text-zinc-500 border-b border-zinc-100">
+                                                {listing.price
+                                                    ? `$${listing.price.toLocaleString()}`
+                                                    : "—"}
+                                            </td>
+                                            {users.map((u) => {
+                                                const val = userScores[u.id];
+                                                return (
+                                                    <td
+                                                        key={u.id}
+                                                        className="text-right py-2 px-3 font-mono text-sm border-b border-zinc-100"
                                                     >
-                                                        {listing.title}
-                                                    </Link>
-                                                    {listing.status ===
-                                                        "FAVORITE" && (
-                                                        <Badge
-                                                            variant="default"
-                                                            className="ml-2 text-[10px]"
-                                                        >
-                                                            Fav
-                                                        </Badge>
-                                                    )}
-                                                    {listing.status ===
-                                                        "SELECTED" && (
-                                                        <Badge
-                                                            className="ml-2 text-[10px] bg-green-600 text-white"
-                                                        >
-                                                            Selected
-                                                        </Badge>
-                                                    )}
-                                                </td>
-                                                <td className="text-right py-2.5 px-3 tabular-nums text-muted-foreground">
-                                                    {listing.price
-                                                        ? `$${listing.price.toLocaleString()}`
-                                                        : "—"}
-                                                </td>
-                                                {users.map((u) => {
-                                                    const val =
-                                                        userScores[u.id];
-                                                    return (
-                                                        <td
-                                                            key={u.id}
-                                                            className="text-right py-2.5 px-3 tabular-nums"
-                                                        >
-                                                            {val != null ? (
-                                                                <span
-                                                                    className={`font-semibold ${scoreColor(val)}`}
-                                                                >
-                                                                    {val.toFixed(
-                                                                        1,
-                                                                    )}
-                                                                </span>
-                                                            ) : (
-                                                                <span className="text-muted-foreground">
-                                                                    —
-                                                                </span>
-                                                            )}
-                                                        </td>
-                                                    );
-                                                })}
-                                                <td className="text-right py-2.5 pl-3 tabular-nums font-semibold">
-                                                    {avg != null
-                                                        ? avg.toFixed(1)
-                                                        : "—"}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </CardContent>
-                </Card>
+                                                        {val != null ? (
+                                                            <span className={`font-semibold ${scoreColor(val)}`}>
+                                                                {val.toFixed(1)}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-zinc-300">
+                                                                —
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                );
+                                            })}
+                                            <td className="text-right py-2 pl-3 font-mono text-sm font-semibold border-b border-zinc-100">
+                                                {avg != null
+                                                    ? avg.toFixed(1)
+                                                    : "—"}
+                                            </td>
+                                        </tr>
+                                    ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             )}
 
             {/* Empty state */}
             {listings.length === 0 && (
-                <Card>
-                    <CardContent className="py-12 text-center">
-                        <Home className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                        <h2 className="text-lg font-semibold mb-2">
-                            No listings yet
-                        </h2>
-                        <p className="text-muted-foreground mb-6">
-                            Start adding apartments you find and we'll score
-                            them against both your preferences.
-                        </p>
-                        <Link href="/listings/new">
-                            <Button>
-                                <Plus className="h-4 w-4 mr-2" />
-                                Add Your First Listing
-                            </Button>
-                        </Link>
-                    </CardContent>
-                </Card>
+                <div className="rounded-lg border border-zinc-200 bg-white p-5 py-12 text-center">
+                    <p className="text-sm font-medium text-zinc-700 mb-2">
+                        No listings yet
+                    </p>
+                    <p className="text-xs text-zinc-400 mb-6">
+                        Start adding apartments you find and we&apos;ll score
+                        them against both your preferences.
+                    </p>
+                    <Link href="/listings/new">
+                        <button className="rounded-lg bg-zinc-900 px-4 py-2 text-xs font-medium text-white hover:bg-zinc-800 transition-colors">
+                            + Add Your First Listing
+                        </button>
+                    </Link>
+                </div>
             )}
         </div>
     );
