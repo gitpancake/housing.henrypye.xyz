@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { evaluateListing } from "@/lib/ai/evaluate-listing";
+import { evaluateListing, toUserPreferences } from "@/lib/ai/evaluate-listing";
 import { ACTIVE_STATUSES } from "@/lib/listing-status";
 
 export async function POST() {
@@ -40,27 +40,7 @@ export async function POST() {
                         squareFeet: listing.squareFeet,
                         scrapedContent: listing.scrapedContent,
                     },
-                    {
-                        naturalLight: user.preferences.naturalLight,
-                        bedroomsMin: user.preferences.bedroomsMin,
-                        bedroomsMax: user.preferences.bedroomsMax,
-                        outdoorsAccess: user.preferences.outdoorsAccess,
-                        publicTransport: user.preferences.publicTransport,
-                        budgetMin: user.preferences.budgetMin,
-                        budgetMax: user.preferences.budgetMax,
-                        petFriendly: user.preferences.petFriendly,
-                        laundryInUnit: user.preferences.laundryInUnit,
-                        parking: user.preferences.parking,
-                        quietNeighbourhood: user.preferences.quietNeighbourhood,
-                        modernFinishes: user.preferences.modernFinishes,
-                        storageSpace: user.preferences.storageSpace,
-                        gymAmenities: user.preferences.gymAmenities,
-                        customDesires:
-                            (user.preferences.customDesires as {
-                                label: string;
-                                enabled: boolean;
-                            }[]) || [],
-                    },
+                    toUserPreferences(user.preferences),
                     user.displayName,
                 );
 

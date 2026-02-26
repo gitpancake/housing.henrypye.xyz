@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { generateRecommendations } from "@/lib/ai/recommend-areas";
 import { computePreferencesHash } from "@/lib/ai/preferences-hash";
+import { toUserPreferences } from "@/lib/ai/evaluate-listing";
 
 export async function GET(request: NextRequest) {
     const session = await getSession();
@@ -30,27 +31,9 @@ export async function GET(request: NextRequest) {
         const staleness: Record<string, boolean> = {};
         for (const user of users) {
             if (!user.preferences) continue;
-            const currentHash = computePreferencesHash({
-                naturalLight: user.preferences.naturalLight,
-                bedroomsMin: user.preferences.bedroomsMin,
-                bedroomsMax: user.preferences.bedroomsMax,
-                outdoorsAccess: user.preferences.outdoorsAccess,
-                publicTransport: user.preferences.publicTransport,
-                budgetMin: user.preferences.budgetMin,
-                budgetMax: user.preferences.budgetMax,
-                petFriendly: user.preferences.petFriendly,
-                laundryInUnit: user.preferences.laundryInUnit,
-                parking: user.preferences.parking,
-                quietNeighbourhood: user.preferences.quietNeighbourhood,
-                modernFinishes: user.preferences.modernFinishes,
-                storageSpace: user.preferences.storageSpace,
-                gymAmenities: user.preferences.gymAmenities,
-                customDesires:
-                    (user.preferences.customDesires as {
-                        label: string;
-                        enabled: boolean;
-                    }[]) || [],
-            });
+            const currentHash = computePreferencesHash(
+                toUserPreferences(user.preferences),
+            );
 
             const latestRec = await prisma.areaRecommendation.findFirst({
                 where: { userId: user.id },

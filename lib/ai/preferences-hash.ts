@@ -1,24 +1,7 @@
 import { createHash } from "crypto"
+import type { UserPreferences } from "./evaluate-listing"
 
-interface PreferencesForHash {
-  naturalLight: boolean
-  bedroomsMin: number
-  bedroomsMax: number
-  outdoorsAccess: boolean
-  publicTransport: boolean
-  budgetMin: number
-  budgetMax: number
-  petFriendly: boolean
-  laundryInUnit: boolean
-  parking: boolean
-  quietNeighbourhood: boolean
-  modernFinishes: boolean
-  storageSpace: boolean
-  gymAmenities: boolean
-  customDesires: { label: string; enabled: boolean }[]
-}
-
-export function computePreferencesHash(prefs: PreferencesForHash): string {
+export function computePreferencesHash(prefs: UserPreferences): string {
   const normalized = {
     ...prefs,
     customDesires: [...prefs.customDesires]

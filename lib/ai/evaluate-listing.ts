@@ -1,7 +1,7 @@
 import { anthropic } from "./anthropic-client";
 import { locationConfig } from "@/lib/location-config";
 
-interface UserPreferences {
+export interface UserPreferences {
     naturalLight: boolean;
     bedroomsMin: number;
     bedroomsMax: number;
@@ -30,6 +30,44 @@ interface ListingData {
     petFriendly: boolean | null;
     squareFeet: number | null;
     scrapedContent: string | null;
+}
+
+/** Extract UserPreferences from a Prisma user preferences record. */
+export function toUserPreferences(prefs: {
+    naturalLight: boolean;
+    bedroomsMin: number;
+    bedroomsMax: number;
+    outdoorsAccess: boolean;
+    publicTransport: boolean;
+    budgetMin: number;
+    budgetMax: number;
+    petFriendly: boolean;
+    laundryInUnit: boolean;
+    parking: boolean;
+    quietNeighbourhood: boolean;
+    modernFinishes: boolean;
+    storageSpace: boolean;
+    gymAmenities: boolean;
+    customDesires: unknown;
+}): UserPreferences {
+    return {
+        naturalLight: prefs.naturalLight,
+        bedroomsMin: prefs.bedroomsMin,
+        bedroomsMax: prefs.bedroomsMax,
+        outdoorsAccess: prefs.outdoorsAccess,
+        publicTransport: prefs.publicTransport,
+        budgetMin: prefs.budgetMin,
+        budgetMax: prefs.budgetMax,
+        petFriendly: prefs.petFriendly,
+        laundryInUnit: prefs.laundryInUnit,
+        parking: prefs.parking,
+        quietNeighbourhood: prefs.quietNeighbourhood,
+        modernFinishes: prefs.modernFinishes,
+        storageSpace: prefs.storageSpace,
+        gymAmenities: prefs.gymAmenities,
+        customDesires:
+            (prefs.customDesires as { label: string; enabled: boolean }[]) || [],
+    };
 }
 
 export interface EvaluationResult {
