@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { geocodeAddress } from "@/lib/geocode";
+import { listingCreateSchema } from "@/lib/validations";
 
 export async function GET() {
     const session = await getSession();
@@ -34,11 +35,19 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const data = await request.json();
+    const raw = await request.json();
+    const parsed = listingCreateSchema.safeParse(raw);
+    if (!parsed.success) {
+        return NextResponse.json(
+            { error: "Validation failed", details: parsed.error.flatten() },
+            { status: 400 },
+        );
+    }
+    const data = parsed.data;
 
     // Auto-geocode if address provided but no coordinates
-    let latitude = data.latitude ? parseFloat(data.latitude) : null;
-    let longitude = data.longitude ? parseFloat(data.longitude) : null;
+    let latitude = data.latitude ?? null;
+    let longitude = data.longitude ?? null;
     if (data.address && !latitude && !longitude) {
         const coords = await geocodeAddress(data.address);
         if (coords) {
@@ -51,25 +60,25 @@ export async function POST(request: Request) {
         data: {
             addedBy: session.userId,
             title: data.title,
-            description: data.description || "",
-            url: data.url || "",
-            address: data.address || "",
+            description: data.description,
+            url: data.url,
+            address: data.address,
             latitude,
             longitude,
-            price: data.price ? parseInt(data.price) : null,
-            bedrooms: data.bedrooms ? parseInt(data.bedrooms) : null,
-            bathrooms: data.bathrooms ? parseInt(data.bathrooms) : null,
+            price: data.price ?? null,
+            bedrooms: data.bedrooms ?? null,
+            bathrooms: data.bathrooms ?? null,
             petFriendly: data.petFriendly ?? null,
-            squareFeet: data.squareFeet ? parseInt(data.squareFeet) : null,
-            contactPhone: data.contactPhone || null,
-            parking: data.parking || null,
-            laundry: data.laundry || null,
-            yearBuilt: data.yearBuilt ? parseInt(data.yearBuilt) : null,
-            availableDate: data.availableDate || null,
-            neighbourhood: data.neighbourhood || null,
-            photos: data.photos || [],
-            scrapedContent: data.scrapedContent || null,
-            notes: data.notes || null,
+            squareFeet: data.squareFeet ?? null,
+            contactPhone: data.contactPhone ?? null,
+            parking: data.parking ?? null,
+            laundry: data.laundry ?? null,
+            yearBuilt: data.yearBuilt ?? null,
+            availableDate: data.availableDate ?? null,
+            neighbourhood: data.neighbourhood ?? null,
+            photos: data.photos,
+            scrapedContent: data.scrapedContent ?? null,
+            notes: data.notes ?? null,
         },
         include: {
             addedByUser: {
