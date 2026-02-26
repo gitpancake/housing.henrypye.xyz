@@ -16,6 +16,7 @@ import {
     Sparkles,
     RefreshCw,
 } from "lucide-react";
+import { scoreColor, getEffectiveScore } from "@/lib/scores";
 import { AreaRecommendations } from "./area-recommendations";
 import { ViewingDayBanner } from "./viewing-day-banner";
 
@@ -108,17 +109,6 @@ interface DashboardContentProps {
     areaNotes: AreaNoteData[];
     userStatuses: UserStatus[];
     upcomingViewings: UpcomingViewing[];
-}
-
-function getEffectiveScore(score: Score): number | null {
-    return score.manualOverrideScore ?? score.aiOverallScore;
-}
-
-function scoreColor(score: number): string {
-    if (score >= 8) return "text-green-600 dark:text-green-400";
-    if (score >= 6) return "text-yellow-600 dark:text-yellow-400";
-    if (score >= 4) return "text-orange-600 dark:text-orange-400";
-    return "text-red-600 dark:text-red-400";
 }
 
 export function DashboardContent({

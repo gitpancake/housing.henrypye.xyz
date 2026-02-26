@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Bed, Bath, DollarSign, User } from "lucide-react";
+import { scoreColor, getEffectiveScore } from "@/lib/scores";
 
 interface Score {
     id: string;
@@ -34,17 +35,6 @@ interface ListingCardProps {
         scores: Score[];
         createdAt: string;
     };
-}
-
-function getScore(score: Score): number | null {
-    return score.manualOverrideScore ?? score.aiOverallScore;
-}
-
-function scoreColor(score: number): string {
-    if (score >= 8) return "text-green-600 dark:text-green-400";
-    if (score >= 6) return "text-yellow-600 dark:text-yellow-400";
-    if (score >= 4) return "text-orange-600 dark:text-orange-400";
-    return "text-red-600 dark:text-red-400";
 }
 
 export function ListingCard({ listing }: ListingCardProps) {
@@ -124,7 +114,7 @@ export function ListingCard({ listing }: ListingCardProps) {
                     {listing.scores.length > 0 && (
                         <div className="border-t pt-3 space-y-1">
                             {listing.scores.map((score) => {
-                                const val = getScore(score);
+                                const val = getEffectiveScore(score);
                                 return (
                                     <div
                                         key={score.id}

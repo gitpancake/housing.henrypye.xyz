@@ -18,6 +18,7 @@ import {
 import { format, isToday, isTomorrow } from "date-fns";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { scoreColor } from "@/lib/scores";
 
 const ViewingRouteMap = dynamic(
     () => import("@/components/map/viewing-route-map"),
@@ -61,13 +62,6 @@ interface UpcomingViewing {
 
 interface ViewingDayBannerProps {
     viewings: UpcomingViewing[];
-}
-
-function scoreColor(score: number): string {
-    if (score >= 8) return "text-green-600 dark:text-green-400";
-    if (score >= 6) return "text-yellow-600 dark:text-yellow-400";
-    if (score >= 4) return "text-orange-600 dark:text-orange-400";
-    return "text-red-600 dark:text-red-400";
 }
 
 function getDirectionsUrl(from: string, to: string): string {
