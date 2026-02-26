@@ -10,7 +10,7 @@ export async function POST() {
     }
 
     const listings = await prisma.listing.findMany({
-        where: { status: { in: ["ACTIVE", "FAVORITE"] } },
+        where: { status: { in: ["ACTIVE", "FAVORITE", "SELECTED"] } },
     });
 
     const usersWithPrefs = await prisma.user.findMany({

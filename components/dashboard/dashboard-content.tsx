@@ -134,7 +134,7 @@ export function DashboardContent({
 }: DashboardContentProps) {
     const [generatingRecs, setGeneratingRecs] = useState(false);
     const activeListings = listings.filter(
-        (l) => l.status === "ACTIVE" || l.status === "FAVORITE",
+        (l) => l.status === "ACTIVE" || l.status === "FAVORITE" || l.status === "SELECTED",
     );
     const favorites = listings.filter((l) => l.status === "FAVORITE");
 
@@ -436,6 +436,14 @@ export function DashboardContent({
                                                             className="ml-2 text-[10px]"
                                                         >
                                                             Fav
+                                                        </Badge>
+                                                    )}
+                                                    {listing.status ===
+                                                        "SELECTED" && (
+                                                        <Badge
+                                                            className="ml-2 text-[10px] bg-green-600 text-white"
+                                                        >
+                                                            Selected
                                                         </Badge>
                                                     )}
                                                 </td>

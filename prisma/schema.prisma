@@ -68,6 +68,7 @@ enum ListingStatus {
   ARCHIVED
   REJECTED
   FAVORITE
+  SELECTED
 
   @@map("listing_status")
   @@schema("housing")

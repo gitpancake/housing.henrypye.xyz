@@ -40,6 +40,7 @@ import {
     Clock,
     Plus,
     Phone,
+    Home,
 } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -128,6 +129,7 @@ export default function ListingDetailPage() {
     const [loading, setLoading] = useState(true);
     const [evaluating, setEvaluating] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [selecting, setSelecting] = useState(false);
     const [creatingCallTodo, setCreatingCallTodo] = useState(false);
     const [viewings, setViewings] = useState<ViewingItem[]>([]);
     const [selectedViewingId, setSelectedViewingId] = useState<string | null>(
@@ -216,6 +218,22 @@ export default function ListingDetailPage() {
         }
     }
 
+    async function handleSelect() {
+        setSelecting(true);
+        try {
+            const res = await fetch(`/api/listings/${id}/select`, {
+                method: "POST",
+            });
+            if (!res.ok) throw new Error();
+            toast.success("Congratulations! You've found your new home!");
+            setListing({ ...listing!, status: "SELECTED" });
+        } catch {
+            toast.error("Failed to select listing");
+        } finally {
+            setSelecting(false);
+        }
+    }
+
     async function handleOverride(scoreId: string, value: string) {
         const numVal = value === "" ? null : parseFloat(value);
         try {
@@ -289,57 +307,100 @@ export default function ListingDetailPage() {
                                 Edit
                             </Button>
                         </Link>
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    disabled={deleting}
-                                >
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    {deleting ? "Deleting..." : "Delete"}
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>
-                                        Delete this listing?
-                                    </AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        This will permanently delete &quot;
-                                        {listing.title}&quot; and all associated
-                                        scores. This action cannot be undone.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>
-                                        Cancel
-                                    </AlertDialogCancel>
-                                    <AlertDialogAction onClick={handleDelete}>
-                                        Delete
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
+                        {(listing.status === "ACTIVE" || listing.status === "FAVORITE") && (
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button
+                                        size="sm"
+                                        className="bg-green-600 hover:bg-green-700 text-white"
+                                        disabled={selecting}
+                                    >
+                                        <Home className="h-4 w-4 mr-2" />
+                                        {selecting ? "Selecting..." : "This is the one!"}
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>
+                                            Select this as your new home?
+                                        </AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This will mark &quot;{listing.title}&quot; as your
+                                            chosen home. All other active listings will be
+                                            archived. Their data (viewings, notes, scores)
+                                            will be preserved but they&apos;ll move out of
+                                            your active view.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction
+                                            onClick={handleSelect}
+                                            className="bg-green-600 hover:bg-green-700"
+                                        >
+                                            Yes, this is home!
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        )}
+                        {listing.status !== "SELECTED" && (
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        disabled={deleting}
+                                    >
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        {deleting ? "Deleting..." : "Delete"}
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>
+                                            Delete this listing?
+                                        </AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This will permanently delete &quot;
+                                            {listing.title}&quot; and all associated
+                                            scores. This action cannot be undone.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>
+                                            Cancel
+                                        </AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleDelete}>
+                                            Delete
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        )}
                     </div>
                 </div>
 
                 <div className="space-y-6">
-                    {/* Header */}
-                    <div>
-                        <div className="flex items-start justify-between gap-4">
-                            <h1 className="text-2xl font-bold">
-                                {listing.title}
-                            </h1>
+                    {/* Selected banner */}
+                    {listing.status === "SELECTED" && (
+                        <div className="rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-4 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <Home className="h-5 w-5 text-green-600" />
+                                <div>
+                                    <p className="font-semibold text-green-800 dark:text-green-200">
+                                        Your new home!
+                                    </p>
+                                    <p className="text-sm text-green-600 dark:text-green-400">
+                                        This listing has been selected as your chosen apartment.
+                                    </p>
+                                </div>
+                            </div>
                             <Button
                                 variant="ghost"
-                                size="icon"
-                                className="shrink-0"
+                                size="sm"
+                                className="text-muted-foreground"
                                 onClick={async () => {
-                                    const newStatus =
-                                        listing.status === "FAVORITE"
-                                            ? "ACTIVE"
-                                            : "FAVORITE";
                                     const res = await fetch(
                                         `/api/listings/${id}`,
                                         {
@@ -349,31 +410,77 @@ export default function ListingDetailPage() {
                                                     "application/json",
                                             },
                                             body: JSON.stringify({
-                                                status: newStatus,
+                                                status: "FAVORITE",
                                             }),
                                         },
                                     );
                                     if (res.ok) {
                                         setListing({
                                             ...listing,
-                                            status: newStatus,
+                                            status: "FAVORITE",
                                         });
                                         toast.success(
-                                            newStatus === "FAVORITE"
-                                                ? "Added to favourites"
-                                                : "Removed from favourites",
+                                            "Selection undone. Other listings remain archived.",
                                         );
                                     }
                                 }}
                             >
-                                <Star
-                                    className={`h-5 w-5 ${
-                                        listing.status === "FAVORITE"
-                                            ? "fill-yellow-400 text-yellow-400"
-                                            : "text-muted-foreground"
-                                    }`}
-                                />
+                                Undo selection
                             </Button>
+                        </div>
+                    )}
+
+                    {/* Header */}
+                    <div>
+                        <div className="flex items-start justify-between gap-4">
+                            <h1 className="text-2xl font-bold">
+                                {listing.title}
+                            </h1>
+                            {listing.status !== "SELECTED" && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="shrink-0"
+                                    onClick={async () => {
+                                        const newStatus =
+                                            listing.status === "FAVORITE"
+                                                ? "ACTIVE"
+                                                : "FAVORITE";
+                                        const res = await fetch(
+                                            `/api/listings/${id}`,
+                                            {
+                                                method: "PUT",
+                                                headers: {
+                                                    "Content-Type":
+                                                        "application/json",
+                                                },
+                                                body: JSON.stringify({
+                                                    status: newStatus,
+                                                }),
+                                            },
+                                        );
+                                        if (res.ok) {
+                                            setListing({
+                                                ...listing,
+                                                status: newStatus,
+                                            });
+                                            toast.success(
+                                                newStatus === "FAVORITE"
+                                                    ? "Added to favourites"
+                                                    : "Removed from favourites",
+                                            );
+                                        }
+                                    }}
+                                >
+                                    <Star
+                                        className={`h-5 w-5 ${
+                                            listing.status === "FAVORITE"
+                                                ? "fill-yellow-400 text-yellow-400"
+                                                : "text-muted-foreground"
+                                        }`}
+                                    />
+                                </Button>
+                            )}
                         </div>
                         <p className="text-sm text-muted-foreground mt-1">
                             Added by {listing.addedByUser.displayName} on{" "}

@@ -26,6 +26,17 @@ const goldIcon = L.divIcon({
     iconAnchor: [15, 40],
 });
 
+const greenIcon = L.divIcon({
+    className: "",
+    html: `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="40" viewBox="0 0 24 32">
+        <path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 20 12 20s12-11 12-20C24 5.4 18.6 0 12 0z" fill="#16A34A" stroke="#166534" stroke-width="1"/>
+        <circle cx="12" cy="11" r="5" fill="white"/>
+        <path d="M10 11.5l1.5 1.5 3-3" stroke="#16A34A" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`,
+    iconSize: [30, 40],
+    iconAnchor: [15, 40],
+});
+
 import { locationConfig } from "@/lib/location-config";
 
 const DEFAULT_CENTER = locationConfig.defaultCenter;
@@ -64,7 +75,11 @@ export default function ListingsMap({ listings }: ListingsMapProps) {
                     key={listing.id}
                     position={[listing.latitude!, listing.longitude!]}
                     icon={
-                        listing.status === "FAVORITE" ? goldIcon : defaultIcon
+                        listing.status === "SELECTED"
+                            ? greenIcon
+                            : listing.status === "FAVORITE"
+                              ? goldIcon
+                              : defaultIcon
                     }
                 >
                     <Popup>

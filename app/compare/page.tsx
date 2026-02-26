@@ -16,7 +16,7 @@ export default async function ComparePage() {
   if (!user) redirect("/login")
 
   const listings = await prisma.listing.findMany({
-    where: { status: { in: ["ACTIVE", "FAVORITE"] } },
+    where: { status: { in: ["ACTIVE", "FAVORITE", "SELECTED"] } },
     include: {
       addedByUser: { select: { id: true, displayName: true } },
       scores: {
