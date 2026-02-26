@@ -17,6 +17,7 @@ import {
   Calendar,
   CheckCircle2,
   Clock,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, isPast, startOfDay } from "date-fns";
@@ -60,6 +61,17 @@ export default function TodosPage() {
       toast.success(todo.completed ? "Task reopened" : "Task completed");
     } catch {
       toast.error("Failed to update task");
+    }
+  }
+
+  async function deleteTodo(id: string) {
+    try {
+      const res = await fetch(`/api/todos/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      setTodos((prev) => prev.filter((t) => t.id !== id));
+      toast.success("Task deleted");
+    } catch {
+      toast.error("Failed to delete task");
     }
   }
 
@@ -140,12 +152,23 @@ export default function TodosPage() {
             </p>
           )}
         </button>
-        <Badge
-          variant="outline"
-          className="text-xs shrink-0 text-emerald-700 dark:text-emerald-400"
-        >
-          {todo.user.displayName}
-        </Badge>
+        <div className="flex items-center gap-2 shrink-0">
+          <Badge
+            variant="outline"
+            className="text-xs text-emerald-700 dark:text-emerald-400"
+          >
+            {todo.user.displayName}
+          </Badge>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              deleteTodo(todo.id);
+            }}
+            className="text-zinc-300 hover:text-red-500 transition-colors p-0.5"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
     );
   }

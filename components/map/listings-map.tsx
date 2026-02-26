@@ -81,7 +81,7 @@ export default function ListingsMap({ listings }: ListingsMapProps) {
                                 {listing.title}
                             </Link>
                             {listing.address && (
-                                <p className="text-xs text-gray-600">
+                                <p className="text-xs text-zinc-500">
                                     {listing.address}
                                 </p>
                             )}
