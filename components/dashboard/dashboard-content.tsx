@@ -17,28 +17,9 @@ import {
     RefreshCw,
 } from "lucide-react";
 import { scoreColor, getEffectiveScore } from "@/lib/scores";
+import type { Listing } from "@/types";
 import { AreaRecommendations } from "./area-recommendations";
 import { ViewingDayBanner } from "./viewing-day-banner";
-
-interface Score {
-    id: string;
-    aiOverallScore: number | null;
-    manualOverrideScore: number | null;
-    user: { id: string; username: string; displayName: string };
-}
-
-interface Listing {
-    id: string;
-    title: string;
-    address: string;
-    price: number | null;
-    bedrooms: number | null;
-    status: string;
-    photos: unknown;
-    addedByUser: { id: string; displayName: string };
-    scores: Score[];
-    createdAt: string | Date;
-}
 
 interface AreaRec {
     id: string;

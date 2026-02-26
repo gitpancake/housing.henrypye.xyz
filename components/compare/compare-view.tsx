@@ -20,56 +20,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { scoreColor, scoreBg, getEffectiveScore } from "@/lib/scores";
-
-interface ScoreBreakdown {
-    category: string;
-    score: number;
-    reasoning: string;
-}
-
-interface Score {
-    id: string;
-    aiOverallScore: number | null;
-    aiBreakdown: ScoreBreakdown[] | unknown;
-    aiSummary: string | null;
-    manualOverrideScore: number | null;
-    user: { id: string; username: string; displayName: string };
-}
-
-interface ViewingNote {
-    id: string;
-    title: string;
-    notes: string | null;
-    photos: unknown;
-}
-
-interface Viewing {
-    id: string;
-    scheduledAt: string | Date;
-    status: string;
-    notes: string | null;
-    viewingNotes: ViewingNote[];
-    user: { id: string; displayName: string };
-}
-
-interface Listing {
-    id: string;
-    title: string;
-    address: string;
-    price: number | null;
-    bedrooms: number | null;
-    bathrooms: number | null;
-    squareFeet: number | null;
-    petFriendly: boolean | null;
-    parking: string | null;
-    laundry: string | null;
-    neighbourhood: string | null;
-    photos: unknown;
-    status: string;
-    scores: Score[];
-    viewings: Viewing[];
-    addedByUser: { id: string; displayName: string };
-}
+import type { Listing, ScoreBreakdown } from "@/types";
 
 interface CompareViewProps {
     listings: Listing[];
@@ -509,9 +460,9 @@ export function CompareView({ listings, users }: CompareViewProps) {
                                 >
                                     {selected.map((l) => {
                                         const completedViewings =
-                                            l.viewings.filter(
+                                            (l.viewings ?? []).filter(
                                                 (v) =>
-                                                    v.viewingNotes.length > 0,
+                                                    (v.viewingNotes ?? []).length > 0,
                                             );
                                         if (completedViewings.length === 0) {
                                             return (
@@ -529,7 +480,7 @@ export function CompareView({ listings, users }: CompareViewProps) {
                                                 className="space-y-2"
                                             >
                                                 {completedViewings.map((v) =>
-                                                    v.viewingNotes.map(
+                                                    (v.viewingNotes ?? []).map(
                                                         (note) => (
                                                             <div
                                                                 key={note.id}

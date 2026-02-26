@@ -5,36 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Bed, Bath, DollarSign, User } from "lucide-react";
 import { scoreColor, getEffectiveScore } from "@/lib/scores";
-
-interface Score {
-    id: string;
-    aiOverallScore: number | null;
-    manualOverrideScore: number | null;
-    user: {
-        id: string;
-        username: string;
-        displayName: string;
-    };
-}
+import type { Listing } from "@/types";
 
 interface ListingCardProps {
-    listing: {
-        id: string;
-        title: string;
-        address: string;
-        price: number | null;
-        bedrooms: number | null;
-        bathrooms: number | null;
-        petFriendly: boolean | null;
-        neighbourhood?: string | null;
-        photos: string[];
-        status: string;
-        addedByUser: {
-            displayName: string;
-        };
-        scores: Score[];
-        createdAt: string;
-    };
+    listing: Listing;
 }
 
 export function ListingCard({ listing }: ListingCardProps) {

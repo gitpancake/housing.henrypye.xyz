@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import dynamic from "next/dynamic";
+import type { Listing } from "@/types";
 
 const ListingsMap = dynamic(() => import("@/components/map/listings-map"), {
     ssr: false,
@@ -15,19 +16,8 @@ const ListingsMap = dynamic(() => import("@/components/map/listings-map"), {
     ),
 });
 
-interface MapListing {
-    id: string;
-    title: string;
-    address: string;
-    latitude: number | null;
-    longitude: number | null;
-    price: number | null;
-    bedrooms: number | null;
-    status: string;
-}
-
 export default function MapPage() {
-    const [listings, setListings] = useState<MapListing[]>([]);
+    const [listings, setListings] = useState<Listing[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {

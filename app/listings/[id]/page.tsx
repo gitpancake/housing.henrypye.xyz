@@ -51,6 +51,7 @@ import { ViewingModeDialog } from "@/components/calendar/viewing-mode-dialog";
 import { PhotoLightbox } from "@/components/ui/photo-lightbox";
 import { calculateTakeHome } from "@/lib/tax";
 import { scoreColor, scoreBg } from "@/lib/scores";
+import type { Listing, Score, ScoreBreakdown, Viewing } from "@/types";
 
 const ListingMap = dynamic(
     () => import("@/components/map/listing-map-single"),
@@ -62,53 +63,6 @@ const ListingMap = dynamic(
     },
 );
 
-interface ScoreBreakdown {
-    category: string;
-    score: number;
-    reasoning: string;
-}
-
-interface Score {
-    id: string;
-    aiOverallScore: number | null;
-    aiBreakdown: ScoreBreakdown[] | null;
-    aiSummary: string | null;
-    manualOverrideScore: number | null;
-    user: { id: string; username: string; displayName: string };
-}
-
-interface ViewingItem {
-    id: string;
-    scheduledAt: string;
-    notes: string | null;
-    status: string;
-    user: { id: string; displayName: string };
-}
-
-interface Listing {
-    id: string;
-    title: string;
-    description: string;
-    url: string;
-    address: string;
-    latitude: number | null;
-    longitude: number | null;
-    price: number | null;
-    bedrooms: number | null;
-    bathrooms: number | null;
-    petFriendly: boolean | null;
-    squareFeet: number | null;
-    contactPhone: string | null;
-    parking: string | null;
-    laundry: string | null;
-    photos: string[];
-    status: string;
-    notes: string | null;
-    addedByUser: { displayName: string };
-    scores: Score[];
-    createdAt: string;
-}
-
 export default function ListingDetailPage() {
     const params = useParams();
     const router = useRouter();
@@ -118,7 +72,7 @@ export default function ListingDetailPage() {
     const [deleting, setDeleting] = useState(false);
     const [selecting, setSelecting] = useState(false);
     const [creatingCallTodo, setCreatingCallTodo] = useState(false);
-    const [viewings, setViewings] = useState<ViewingItem[]>([]);
+    const [viewings, setViewings] = useState<Viewing[]>([]);
     const [selectedViewingId, setSelectedViewingId] = useState<string | null>(
         null,
     );

@@ -29,28 +29,7 @@ import {
 import { toast } from "sonner";
 import { PageWrapper } from "@/components/layout/page-wrapper";
 import { getEffectiveArea } from "@/lib/area-utils";
-
-type Listing = {
-    id: string;
-    title: string;
-    address: string;
-    price: number | null;
-    bedrooms: number | null;
-    bathrooms: number | null;
-    petFriendly: boolean | null;
-    neighbourhood?: string | null;
-    contactPhone?: string | null;
-    photos: string[];
-    status: string;
-    addedByUser: { displayName: string };
-    scores: {
-        id: string;
-        aiOverallScore: number | null;
-        manualOverrideScore: number | null;
-        user: { id: string; username: string; displayName: string };
-    }[];
-    createdAt: string;
-};
+import type { Listing } from "@/types";
 
 type SortOption = "newest" | "price-asc" | "price-desc" | "score-avg";
 type ViewMode = "grid" | "by-area";
