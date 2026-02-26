@@ -5,14 +5,6 @@ import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
     AlertDialog,
@@ -32,26 +24,22 @@ import {
     Bed,
     Bath,
     Ruler,
-    RefreshCw,
     Star,
     Pencil,
     Trash2,
-    CalendarDays,
-    Clock,
-    Plus,
     Phone,
     Home,
 } from "lucide-react";
 import Link from "next/link";
-import { format } from "date-fns";
 import dynamic from "next/dynamic";
 import { PageWrapper } from "@/components/layout/page-wrapper";
 import { ExpenseCalculator } from "@/components/listings/expense-calculator";
 import { ViewingModeDialog } from "@/components/calendar/viewing-mode-dialog";
 import { PhotoLightbox } from "@/components/ui/photo-lightbox";
 import { calculateTakeHome } from "@/lib/tax";
-import { scoreColor, scoreBg } from "@/lib/scores";
-import type { Listing, Score, ScoreBreakdown, Viewing } from "@/types";
+import type { Listing, Viewing } from "@/types";
+import { ListingScores } from "@/components/listings/listing-scores";
+import { ListingViewings } from "@/components/listings/listing-viewings";
 
 const ListingMap = dynamic(
     () => import("@/components/map/listing-map-single"),
@@ -172,21 +160,6 @@ export default function ListingDetailPage() {
             toast.error("Failed to select listing");
         } finally {
             setSelecting(false);
-        }
-    }
-
-    async function handleOverride(scoreId: string, value: string) {
-        const numVal = value === "" ? null : parseFloat(value);
-        try {
-            await fetch(`/api/listings/${id}/scores/${scoreId}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ manualOverrideScore: numVal }),
-            });
-            toast.success("Score updated");
-            fetchListing();
-        } catch {
-            toast.error("Failed to update score");
         }
     }
 
@@ -564,243 +537,22 @@ export default function ListingDetailPage() {
                     )}
 
                     {/* Scores */}
-                    <Card>
-                        <CardHeader>
-                            <div className="flex items-center justify-between">
-                                <CardTitle className="text-lg flex items-center gap-2">
-                                    <Star className="h-4 w-4" />
-                                    Scores
-                                </CardTitle>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={handleEvaluate}
-                                    disabled={evaluating}
-                                >
-                                    <RefreshCw
-                                        className={`h-4 w-4 mr-2 ${evaluating ? "animate-spin" : ""}`}
-                                    />
-                                    {evaluating
-                                        ? "Evaluating..."
-                                        : "Re-evaluate"}
-                                </Button>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            {listing.scores.length === 0 ? (
-                                <div className="text-center py-8">
-                                    <p className="text-muted-foreground mb-4">
-                                        Not yet evaluated
-                                    </p>
-                                    <Button
-                                        onClick={handleEvaluate}
-                                        disabled={evaluating}
-                                    >
-                                        {evaluating
-                                            ? "Evaluating..."
-                                            : "Run AI Evaluation"}
-                                    </Button>
-                                </div>
-                            ) : (
-                                <div className="space-y-6">
-                                    {listing.scores.map((score) => {
-                                        const effectiveScore =
-                                            score.manualOverrideScore ??
-                                            score.aiOverallScore;
-                                        const breakdown = (score.aiBreakdown ??
-                                            []) as ScoreBreakdown[];
-                                        return (
-                                            <div key={score.id}>
-                                                <div className="flex items-center justify-between mb-3">
-                                                    <h3 className="font-semibold">
-                                                        {score.user.displayName}
-                                                    </h3>
-                                                    {effectiveScore != null && (
-                                                        <span
-                                                            className={`text-2xl font-bold tabular-nums ${scoreColor(effectiveScore)}`}
-                                                        >
-                                                            {effectiveScore.toFixed(
-                                                                1,
-                                                            )}
-                                                            /10
-                                                        </span>
-                                                    )}
-                                                </div>
-
-                                                {score.aiSummary && (
-                                                    <p className="text-sm text-muted-foreground mb-3">
-                                                        {score.aiSummary}
-                                                    </p>
-                                                )}
-
-                                                <div className="flex items-center gap-3 mb-3">
-                                                    <span className="text-sm text-muted-foreground">
-                                                        Manual Override:
-                                                    </span>
-                                                    <Input
-                                                        type="number"
-                                                        min={0}
-                                                        max={10}
-                                                        step={0.5}
-                                                        className="w-24"
-                                                        placeholder="—"
-                                                        defaultValue={
-                                                            score.manualOverrideScore ??
-                                                            ""
-                                                        }
-                                                        onBlur={(e) =>
-                                                            handleOverride(
-                                                                score.id,
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                    />
-                                                </div>
-
-                                                {breakdown.length > 0 && (
-                                                    <Accordion
-                                                        type="single"
-                                                        collapsible
-                                                    >
-                                                        <AccordionItem value="breakdown">
-                                                            <AccordionTrigger className="text-sm">
-                                                                Score Breakdown
-                                                            </AccordionTrigger>
-                                                            <AccordionContent>
-                                                                <div className="space-y-2">
-                                                                    {breakdown.map(
-                                                                        (
-                                                                            item,
-                                                                            i,
-                                                                        ) => (
-                                                                            <div
-                                                                                key={
-                                                                                    i
-                                                                                }
-                                                                                className={`rounded-lg p-3 ${scoreBg(item.score)}`}
-                                                                            >
-                                                                                <div className="flex items-center justify-between mb-1">
-                                                                                    <span className="text-sm font-medium">
-                                                                                        {
-                                                                                            item.category
-                                                                                        }
-                                                                                    </span>
-                                                                                    <span
-                                                                                        className={`text-sm font-bold tabular-nums ${scoreColor(item.score)}`}
-                                                                                    >
-                                                                                        {
-                                                                                            item.score
-                                                                                        }
-                                                                                        /10
-                                                                                    </span>
-                                                                                </div>
-                                                                                <p className="text-xs text-muted-foreground">
-                                                                                    {
-                                                                                        item.reasoning
-                                                                                    }
-                                                                                </p>
-                                                                            </div>
-                                                                        ),
-                                                                    )}
-                                                                </div>
-                                                            </AccordionContent>
-                                                        </AccordionItem>
-                                                    </Accordion>
-                                                )}
-
-                                                <Separator className="mt-4" />
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
+                    <ListingScores
+                        listingId={id}
+                        scores={listing.scores}
+                        evaluating={evaluating}
+                        onEvaluate={handleEvaluate}
+                        onRefresh={fetchListing}
+                    />
 
                     {/* Viewings */}
-                    <Card>
-                        <CardHeader>
-                            <div className="flex items-center justify-between">
-                                <CardTitle className="text-lg flex items-center gap-2">
-                                    <CalendarDays className="h-4 w-4" />
-                                    Viewings
-                                </CardTitle>
-                                <Link href={`/calendar`}>
-                                    <Button variant="outline" size="sm">
-                                        <Plus className="h-4 w-4 mr-2" />
-                                        Schedule
-                                    </Button>
-                                </Link>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            {viewings.length === 0 ? (
-                                <p className="text-sm text-muted-foreground text-center py-4">
-                                    No viewings scheduled for this listing.
-                                </p>
-                            ) : (
-                                <div className="space-y-2">
-                                    {viewings
-                                        .sort(
-                                            (a, b) =>
-                                                new Date(
-                                                    a.scheduledAt,
-                                                ).getTime() -
-                                                new Date(
-                                                    b.scheduledAt,
-                                                ).getTime(),
-                                        )
-                                        .map((v) => (
-                                            <button
-                                                key={v.id}
-                                                type="button"
-                                                onClick={() => {
-                                                    setSelectedViewingId(v.id);
-                                                    setViewingModeOpen(true);
-                                                }}
-                                                className={`w-full flex items-center justify-between rounded-lg border p-3 text-left hover:bg-muted/50 transition-colors cursor-pointer ${
-                                                    v.status === "CANCELLED"
-                                                        ? "opacity-50"
-                                                        : ""
-                                                }`}
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <Clock className="h-4 w-4 text-muted-foreground" />
-                                                    <div>
-                                                        <p className="text-sm font-medium">
-                                                            {format(
-                                                                new Date(
-                                                                    v.scheduledAt,
-                                                                ),
-                                                                "EEE, MMM d 'at' h:mm a",
-                                                            )}
-                                                        </p>
-                                                        <p className="text-xs text-muted-foreground">
-                                                            Added by{" "}
-                                                            {v.user.displayName}
-                                                            {v.notes &&
-                                                                ` — ${v.notes}`}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                {v.status !== "SCHEDULED" && (
-                                                    <Badge
-                                                        variant={
-                                                            v.status ===
-                                                            "COMPLETED"
-                                                                ? "secondary"
-                                                                : "destructive"
-                                                        }
-                                                    >
-                                                        {v.status}
-                                                    </Badge>
-                                                )}
-                                            </button>
-                                        ))}
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
+                    <ListingViewings
+                        viewings={viewings}
+                        onViewingClick={(viewingId) => {
+                            setSelectedViewingId(viewingId);
+                            setViewingModeOpen(true);
+                        }}
+                    />
 
                     {/* Expense Calculator */}
                     <ExpenseCalculator
