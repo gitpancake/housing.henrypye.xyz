@@ -15,9 +15,28 @@ import {
     Circle,
     Sparkles,
     RefreshCw,
+    Search,
+    MapPin,
+    Bed,
+    Bath,
+    DollarSign,
+    ExternalLink,
 } from "lucide-react";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { scoreColor, getEffectiveScore } from "@/lib/scores";
 import { isActiveListing } from "@/lib/listing-status";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 import type { Listing } from "@/types";
 import { AreaRecommendations } from "./area-recommendations";
 import { ViewingDayBanner } from "./viewing-day-banner";
@@ -104,7 +123,10 @@ export function DashboardContent({
     userStatuses,
     upcomingViewings,
 }: DashboardContentProps) {
+    const router = useRouter();
     const [generatingRecs, setGeneratingRecs] = useState(false);
+    const [resetting, setResetting] = useState(false);
+    const selectedListing = listings.find((l) => l.status === "SELECTED");
     const activeListings = listings.filter(
         (l) => isActiveListing(l.status),
     );
@@ -149,6 +171,22 @@ export function DashboardContent({
     const allPrefsComplete = userStatuses.every((u) => u.preferencesComplete);
     const hasRecs = recommendations.length > 0;
 
+    async function handleResetSearch() {
+        setResetting(true);
+        try {
+            const res = await fetch("/api/listings/reset-search", {
+                method: "POST",
+            });
+            if (!res.ok) throw new Error();
+            toast.success("Ready to start your apartment search again!");
+            router.refresh();
+        } catch {
+            toast.error("Failed to reset search");
+        } finally {
+            setResetting(false);
+        }
+    }
+
     async function handleGenerateRecs() {
         setGeneratingRecs(true);
         try {
@@ -158,6 +196,150 @@ export function DashboardContent({
         } catch {
             setGeneratingRecs(false);
         }
+    }
+
+    // When a listing is selected as "home", show the settled view
+    if (selectedListing) {
+        const photo = (selectedListing.photos as string[])?.[0];
+        return (
+            <div className="p-4 md:p-6 space-y-6 max-w-6xl mx-auto">
+                <div>
+                    <h1 className="text-2xl font-bold">Dashboard</h1>
+                    <p className="text-muted-foreground">
+                        You&apos;ve found your place!
+                    </p>
+                </div>
+
+                <Card className="overflow-hidden border-green-200 dark:border-green-800">
+                    <div className="bg-green-50 dark:bg-green-900/20 px-6 py-4 flex items-center gap-3 border-b border-green-200 dark:border-green-800">
+                        <Home className="h-5 w-5 text-green-600" />
+                        <p className="font-semibold text-green-800 dark:text-green-200">
+                            Currently living at
+                        </p>
+                    </div>
+                    <CardContent className="pt-6">
+                        <div className="flex flex-col md:flex-row gap-6">
+                            {photo && (
+                                <div className="md:w-64 shrink-0">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img
+                                        src={photo}
+                                        alt={selectedListing.title}
+                                        className="h-48 md:h-full w-full object-cover rounded-lg"
+                                    />
+                                </div>
+                            )}
+                            <div className="flex-1 space-y-4">
+                                <div>
+                                    <Link
+                                        href={`/listings/${selectedListing.id}`}
+                                        className="text-xl font-bold hover:underline"
+                                    >
+                                        {selectedListing.title}
+                                    </Link>
+                                    {selectedListing.address && (
+                                        <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-1">
+                                            <MapPin className="h-3.5 w-3.5" />
+                                            {selectedListing.address}
+                                        </p>
+                                    )}
+                                </div>
+                                <div className="flex flex-wrap gap-4 text-sm">
+                                    {selectedListing.price && (
+                                        <span className="flex items-center gap-1">
+                                            <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+                                            ${selectedListing.price.toLocaleString()}/mo
+                                        </span>
+                                    )}
+                                    {selectedListing.bedrooms != null && (
+                                        <span className="flex items-center gap-1">
+                                            <Bed className="h-3.5 w-3.5 text-muted-foreground" />
+                                            {selectedListing.bedrooms} bed
+                                        </span>
+                                    )}
+                                    {selectedListing.bathrooms != null && (
+                                        <span className="flex items-center gap-1">
+                                            <Bath className="h-3.5 w-3.5 text-muted-foreground" />
+                                            {selectedListing.bathrooms} bath
+                                        </span>
+                                    )}
+                                    {selectedListing.neighbourhood && (
+                                        <Badge variant="outline">
+                                            {selectedListing.neighbourhood}
+                                        </Badge>
+                                    )}
+                                </div>
+                                {selectedListing.scores.length > 0 && (
+                                    <div className="flex flex-wrap gap-4">
+                                        {selectedListing.scores.map((score) => {
+                                            const val = getEffectiveScore(score);
+                                            return val != null ? (
+                                                <div key={score.id} className="text-sm">
+                                                    <span className="text-muted-foreground">
+                                                        {score.user.displayName}:{" "}
+                                                    </span>
+                                                    <span className={`font-semibold ${scoreColor(val)}`}>
+                                                        {val.toFixed(1)}/10
+                                                    </span>
+                                                </div>
+                                            ) : null;
+                                        })}
+                                    </div>
+                                )}
+                                <div className="flex items-center gap-3 pt-2">
+                                    <Link href={`/listings/${selectedListing.id}`}>
+                                        <Button variant="outline" size="sm">
+                                            <ExternalLink className="h-4 w-4 mr-2" />
+                                            View Details
+                                        </Button>
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardContent className="py-8 text-center space-y-4">
+                        <Search className="h-10 w-10 mx-auto text-muted-foreground" />
+                        <div>
+                            <p className="font-medium">Looking for a new place?</p>
+                            <p className="text-sm text-muted-foreground mt-1">
+                                Start a new apartment search. Your current listing will be
+                                archived along with all previous listings.
+                            </p>
+                        </div>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="outline" disabled={resetting}>
+                                    <Search className="h-4 w-4 mr-2" />
+                                    {resetting ? "Resetting..." : "Start Looking Again"}
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>
+                                        Start a new apartment search?
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This will archive &quot;{selectedListing.title}&quot; and
+                                        clear your dashboard for a fresh search. All your previous
+                                        listings, viewings, and notes will be preserved in the
+                                        archived section.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleResetSearch}>
+                                        Start Fresh
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </CardContent>
+                </Card>
+            </div>
+        );
     }
 
     return (

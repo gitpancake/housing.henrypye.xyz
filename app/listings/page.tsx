@@ -26,10 +26,12 @@ import {
     LayoutGrid,
     MapPin,
     CalendarPlus,
+    Archive,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageWrapper } from "@/components/layout/page-wrapper";
 import { getEffectiveArea } from "@/lib/area-utils";
+import { isActiveListing } from "@/lib/listing-status";
 import type { Listing } from "@/types";
 
 type SortOption = "newest" | "price-asc" | "price-desc" | "score-avg";
@@ -43,7 +45,10 @@ export default function ListingsPage() {
     const [planArea, setPlanArea] = useState<string | null>(null);
     const [planListings, setPlanListings] = useState<Listing[]>([]);
 
-    const sorted = [...listings].sort((a, b) => {
+    const activeListings = listings.filter((l) => isActiveListing(l.status));
+    const archivedListings = listings.filter((l) => !isActiveListing(l.status));
+
+    const sorted = [...activeListings].sort((a, b) => {
         switch (sort) {
             case "newest":
                 return (
@@ -119,8 +124,11 @@ export default function ListingsPage() {
                     <div>
                         <h1 className="text-2xl font-bold">Listings</h1>
                         <p className="text-muted-foreground">
-                            {listings.length} apartment
-                            {listings.length !== 1 ? "s" : ""} tracked
+                            {activeListings.length} active apartment
+                            {activeListings.length !== 1 ? "s" : ""}
+                            {archivedListings.length > 0 && (
+                                <span> · {archivedListings.length} archived</span>
+                            )}
                         </p>
                     </div>
                     <div className="flex items-center gap-3">
@@ -175,7 +183,7 @@ export default function ListingsPage() {
                         <Button
                             variant="outline"
                             onClick={handleEvaluateAll}
-                            disabled={evaluatingAll || listings.length === 0}
+                            disabled={evaluatingAll || activeListings.length === 0}
                         >
                             <RefreshCw
                                 className={`h-4 w-4 mr-2 ${evaluatingAll ? "animate-spin" : ""}`}
@@ -269,6 +277,34 @@ export default function ListingsPage() {
                     </Accordion>
                 )}
             </div>
+
+            {/* Archived listings */}
+            {!loading && archivedListings.length > 0 && (
+                <div className="mx-auto max-w-6xl px-4 pb-8">
+                    <Accordion type="single" collapsible>
+                        <AccordionItem value="archived" className="border rounded-lg px-4">
+                            <AccordionTrigger className="hover:no-underline">
+                                <div className="flex items-center gap-3">
+                                    <Archive className="h-4 w-4 text-muted-foreground" />
+                                    <span className="font-semibold text-base text-muted-foreground">
+                                        Archived
+                                    </span>
+                                    <Badge variant="secondary">
+                                        {archivedListings.length}
+                                    </Badge>
+                                </div>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 pt-2">
+                                    {archivedListings.map((listing) => (
+                                        <ListingCard key={listing.id} listing={listing} />
+                                    ))}
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+                    </Accordion>
+                </div>
+            )}
 
             {planArea && (
                 <PlanViewingDayDialog

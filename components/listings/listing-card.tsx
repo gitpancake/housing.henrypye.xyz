@@ -16,7 +16,7 @@ export function ListingCard({ listing }: ListingCardProps) {
 
     return (
         <Link href={`/listings/${listing.id}`}>
-            <Card className={`overflow-hidden hover:shadow-md transition-shadow h-full${listing.status === "SELECTED" ? " ring-2 ring-green-500" : ""}`}>
+            <Card className={`overflow-hidden hover:shadow-md transition-shadow h-full${listing.status === "SELECTED" ? " ring-2 ring-green-500" : ""}${listing.status === "ARCHIVED" ? " opacity-60" : ""}`}>
                 {photo && (
                     <div className="h-40 overflow-hidden">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -40,6 +40,11 @@ export function ListingCard({ listing }: ListingCardProps) {
                         {listing.status === "SELECTED" && (
                             <Badge className="shrink-0 bg-green-600 text-white">
                                 Selected
+                            </Badge>
+                        )}
+                        {listing.status === "ARCHIVED" && (
+                            <Badge variant="secondary" className="shrink-0">
+                                Archived
                             </Badge>
                         )}
                     </div>
