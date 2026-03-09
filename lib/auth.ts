@@ -1,67 +1,70 @@
-import bcrypt from "bcryptjs";
-import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { adminAuth } from "./firebase-admin";
+import { prisma } from "./db";
 
-const JWT_SECRET = new TextEncoder().encode(
-    process.env.JWT_SECRET || "housing-app-jwt-secret-vancouver-2026",
-);
-const COOKIE_NAME = "housing_session";
+const SESSION_COOKIE = "firebase-token";
+const MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
-export interface JWTPayload {
-    userId: string;
-    username: string;
-    isAdmin: boolean;
+export interface SessionUser {
+  userId: string;
+  username: string;
+  isAdmin: boolean;
+  displayName: string;
+  email: string;
+  photoURL: string | null;
 }
 
-export async function hashPassword(password: string): Promise<string> {
-    return bcrypt.hash(password, 12);
-}
+export async function getSession(): Promise<SessionUser | null> {
+  const jar = await cookies();
+  const token = jar.get(SESSION_COOKIE)?.value;
+  if (!token) return null;
 
-export async function verifyPassword(
-    password: string,
-    hash: string,
-): Promise<boolean> {
-    return bcrypt.compare(password, hash);
-}
+  try {
+    const decoded = await adminAuth.verifyIdToken(token);
+    const firebaseUser = await adminAuth.getUser(decoded.uid);
 
-export async function signJWT(payload: JWTPayload): Promise<string> {
-    return new SignJWT(payload as unknown as Record<string, unknown>)
-        .setProtectedHeader({ alg: "HS256" })
-        .setExpirationTime("7d")
-        .sign(JWT_SECRET);
-}
-
-export async function verifyJWTToken(
-    token: string,
-): Promise<JWTPayload | null> {
-    try {
-        const { payload } = await jwtVerify(token, JWT_SECRET);
-        return payload as unknown as JWTPayload;
-    } catch {
-        return null;
-    }
-}
-
-export async function getSession(): Promise<JWTPayload | null> {
-    const cookieStore = await cookies();
-    const token = cookieStore.get(COOKIE_NAME)?.value;
-    if (!token) return null;
-    return verifyJWTToken(token);
-}
-
-export async function setSession(payload: JWTPayload): Promise<void> {
-    const token = await signJWT(payload);
-    const cookieStore = await cookies();
-    cookieStore.set(COOKIE_NAME, token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-        path: "/",
+    // Look up Prisma user by Firebase UID
+    let user = await prisma.user.findUnique({
+      where: { firebaseUid: decoded.uid },
     });
+
+    // Auto-create user if not found
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          firebaseUid: decoded.uid,
+          username: firebaseUser.email ?? decoded.uid,
+          displayName: firebaseUser.displayName ?? firebaseUser.email ?? "User",
+          passwordHash: "",
+        },
+      });
+    }
+
+    return {
+      userId: user.id,
+      username: user.username,
+      isAdmin: user.isAdmin,
+      displayName: user.displayName,
+      email: firebaseUser.email ?? "",
+      photoURL: firebaseUser.photoURL ?? null,
+    };
+  } catch {
+    return null;
+  }
 }
 
-export async function clearSession(): Promise<void> {
-    const cookieStore = await cookies();
-    cookieStore.delete(COOKIE_NAME);
+export async function setSession(idToken: string) {
+  const jar = await cookies();
+  jar.set(SESSION_COOKIE, idToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: MAX_AGE,
+    path: "/",
+  });
+}
+
+export async function clearSession() {
+  const jar = await cookies();
+  jar.delete(SESSION_COOKIE);
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
-import { getSession, hashPassword } from "@/lib/auth"
+import { getSession } from "@/lib/auth"
+import { adminAuth } from "@/lib/firebase-admin"
 
 export async function GET() {
   const session = await getSession()
@@ -29,36 +30,43 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
-  const { username, password, displayName, isAdmin } = await request.json()
+  const { email, password, displayName, isAdmin } = await request.json()
 
-  if (!username || !password) {
+  if (!email || !password) {
     return NextResponse.json(
-      { error: "Username and password are required" },
+      { error: "Email and password are required" },
       { status: 400 }
     )
   }
 
-  const existing = await prisma.user.findUnique({ where: { username } })
-  if (existing) {
-    return NextResponse.json({ error: "Username already exists" }, { status: 409 })
+  try {
+    const firebaseUser = await adminAuth.createUser({
+      email,
+      password,
+      displayName: displayName || email,
+    })
+
+    const user = await prisma.user.create({
+      data: {
+        firebaseUid: firebaseUser.uid,
+        username: email.toLowerCase(),
+        displayName: displayName || email,
+        isAdmin: isAdmin ?? false,
+      },
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+        isAdmin: true,
+        createdAt: true,
+      },
+    })
+
+    return NextResponse.json({ user }, { status: 201 })
+  } catch (error: any) {
+    if (error?.code === "auth/email-already-exists") {
+      return NextResponse.json({ error: "Email already exists" }, { status: 409 })
+    }
+    return NextResponse.json({ error: "Failed to create user" }, { status: 500 })
   }
-
-  const passwordHash = await hashPassword(password)
-  const user = await prisma.user.create({
-    data: {
-      username: username.toLowerCase(),
-      passwordHash,
-      displayName: displayName || username,
-      isAdmin: isAdmin ?? false,
-    },
-    select: {
-      id: true,
-      username: true,
-      displayName: true,
-      isAdmin: true,
-      createdAt: true,
-    },
-  })
-
-  return NextResponse.json({ user }, { status: 201 })
 }

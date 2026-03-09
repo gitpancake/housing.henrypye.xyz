@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
-import { getSession, hashPassword } from "@/lib/auth"
+import { getSession } from "@/lib/auth"
 
 export async function PUT(
   request: NextRequest,
@@ -17,7 +17,6 @@ export async function PUT(
   const updateData: Record<string, unknown> = {}
   if (data.displayName !== undefined) updateData.displayName = data.displayName
   if (data.isAdmin !== undefined) updateData.isAdmin = data.isAdmin
-  if (data.password) updateData.passwordHash = await hashPassword(data.password)
 
   const user = await prisma.user.update({
     where: { id },
@@ -44,7 +43,6 @@ export async function DELETE(
 
   const { id } = await params
 
-  // Don't allow deleting yourself
   if (id === session.userId) {
     return NextResponse.json({ error: "Cannot delete your own account" }, { status: 400 })
   }

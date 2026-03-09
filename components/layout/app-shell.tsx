@@ -1,8 +1,8 @@
 "use client";
 
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
     Sidebar,
     SidebarContent,
@@ -17,7 +17,12 @@ import {
     SidebarTrigger,
     SidebarInset,
 } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ThemeTogglerButton } from "@/components/animate-ui/components/buttons/theme-toggler";
+import { AuthProvider, useAuth, type AuthUser } from "@/contexts/AuthContext";
+import ProfileDialog from "@/components/profile-dialog";
 
 interface AppShellProps {
     children: React.ReactNode;
@@ -25,6 +30,8 @@ interface AppShellProps {
         displayName: string;
         username: string;
         isAdmin: boolean;
+        email: string;
+        photoURL: string | null;
     };
 }
 
@@ -45,15 +52,28 @@ const NAV_GROUPS = [
     ],
 ];
 
-export function AppShell({ children, user }: AppShellProps) {
-    const pathname = usePathname();
-    const router = useRouter();
-
-    async function handleLogout() {
-        await fetch("/api/auth/logout", { method: "POST" });
-        router.push("/login");
-        router.refresh();
+function getInitials(name: string | null, email: string): string {
+    if (name) {
+        return name
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+            .toUpperCase()
+            .slice(0, 2);
     }
+    return email[0]?.toUpperCase() ?? "?";
+}
+
+function AppShellInner({
+    children,
+    isAdmin,
+}: {
+    children: React.ReactNode;
+    isAdmin: boolean;
+}) {
+    const pathname = usePathname();
+    const { user, logout } = useAuth();
+    const [profileOpen, setProfileOpen] = useState(false);
 
     function isActive(href: string) {
         return href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -92,7 +112,7 @@ export function AppShell({ children, user }: AppShellProps) {
                             </SidebarGroup>
                         </Fragment>
                     ))}
-                    {user.isAdmin && (
+                    {isAdmin && (
                         <>
                             <SidebarSeparator />
                             <SidebarGroup className="py-0">
@@ -111,16 +131,37 @@ export function AppShell({ children, user }: AppShellProps) {
                     )}
                 </SidebarContent>
 
-                <SidebarFooter className="p-4">
-                    <div className="text-xs text-sidebar-foreground/70">
-                        {user.displayName}
+                <SidebarFooter>
+                    <Separator className="bg-sidebar-border" />
+                    <div className="px-2 py-1">
+                        <button
+                            onClick={() => setProfileOpen(true)}
+                            className="flex items-center gap-2 mb-2 w-full text-left hover:opacity-80 transition-opacity"
+                        >
+                            <Avatar className="size-6">
+                                {user.photoURL && (
+                                    <AvatarImage
+                                        src={user.photoURL}
+                                        alt={user.displayName ?? ""}
+                                    />
+                                )}
+                                <AvatarFallback className="text-[10px] bg-sidebar-accent text-sidebar-accent-foreground">
+                                    {getInitials(user.displayName, user.email)}
+                                </AvatarFallback>
+                            </Avatar>
+                            <span className="text-xs text-sidebar-foreground/70 truncate">
+                                {user.displayName ?? user.email}
+                            </span>
+                        </button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={logout}
+                            className="h-auto p-0 text-xs text-sidebar-foreground/70 hover:text-sidebar-primary hover:bg-transparent"
+                        >
+                            Sign out
+                        </Button>
                     </div>
-                    <button
-                        onClick={handleLogout}
-                        className="text-xs text-sidebar-foreground/70 hover:text-sidebar-primary transition-colors text-left"
-                    >
-                        Sign out
-                    </button>
                 </SidebarFooter>
             </Sidebar>
 
@@ -139,6 +180,27 @@ export function AppShell({ children, user }: AppShellProps) {
                 </header>
                 <main className="p-4 lg:p-8">{children}</main>
             </SidebarInset>
+            <ProfileDialog
+                open={profileOpen}
+                onOpenChange={setProfileOpen}
+            />
         </SidebarProvider>
+    );
+}
+
+export function AppShell({ children, user }: AppShellProps) {
+    const authUser: AuthUser = {
+        uid: user.username,
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL,
+    };
+
+    return (
+        <AuthProvider user={authUser}>
+            <AppShellInner isAdmin={user.isAdmin}>
+                {children}
+            </AppShellInner>
+        </AuthProvider>
     );
 }

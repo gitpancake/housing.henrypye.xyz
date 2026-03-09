@@ -154,6 +154,8 @@ export default async function HomePage() {
                 displayName: user.displayName,
                 username: user.username,
                 isAdmin: user.isAdmin,
+                email: session.email,
+                photoURL: session.photoURL,
             }}
         >
             <DashboardContent

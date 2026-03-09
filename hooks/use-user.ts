@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 
 interface User {
   id: string
@@ -8,18 +9,27 @@ interface User {
   displayName: string
   isAdmin: boolean
   onboardingComplete: boolean
+  email: string
+  photoURL: string | null
 }
 
 export function useUser() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const router = useRouter()
 
   useEffect(() => {
     fetch("/api/auth/me")
       .then((res) => res.json())
-      .then((data) => setUser(data.user))
+      .then((data) => {
+        if (data.user) {
+          setUser(data.user)
+        } else {
+          router.push("/login")
+        }
+      })
       .finally(() => setLoading(false))
-  }, [])
+  }, [router])
 
   return { user, loading }
 }

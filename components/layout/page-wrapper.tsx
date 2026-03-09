@@ -17,7 +17,13 @@ export function PageWrapper({ children }: { children: React.ReactNode }) {
   if (!user) return <>{children}</>
 
   return (
-    <AppShell user={user}>
+    <AppShell user={{
+      displayName: user.displayName,
+      username: user.username,
+      isAdmin: user.isAdmin,
+      email: user.email ?? "",
+      photoURL: user.photoURL ?? null,
+    }}>
       {children}
     </AppShell>
   )

@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { jwtVerify } from "jose";
 
-const JWT_SECRET = new TextEncoder().encode(
-    process.env.JWT_SECRET || "housing-app-jwt-secret-vancouver-2026",
-);
-const COOKIE_NAME = "housing_session";
-const PUBLIC_PATHS = ["/login", "/api/auth/login", "/api/auth/logout"];
+const COOKIE_NAME = "firebase-token";
+const PUBLIC_PATHS = ["/login", "/api/auth"];
 
 export default async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
@@ -24,23 +20,13 @@ export default async function proxy(request: NextRequest) {
         return NextResponse.next();
     }
 
-    // Check for session token
+    // Check for session cookie
     const token = request.cookies.get(COOKIE_NAME)?.value;
     if (!token) {
         return NextResponse.redirect(new URL("/login", request.url));
     }
 
-    try {
-        const { payload } = await jwtVerify(token, JWT_SECRET);
-        // Add user info to headers for downstream use
-        const response = NextResponse.next();
-        response.headers.set("x-user-id", payload.userId as string);
-        response.headers.set("x-username", payload.username as string);
-        response.headers.set("x-is-admin", String(payload.isAdmin));
-        return response;
-    } catch {
-        return NextResponse.redirect(new URL("/login", request.url));
-    }
+    return NextResponse.next();
 }
 
 export const config = {

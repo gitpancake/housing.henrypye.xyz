@@ -29,6 +29,8 @@ export async function GET() {
           displayName: user.displayName,
           isAdmin: user.isAdmin,
           onboardingComplete: user.preferences?.onboardingComplete ?? false,
+          email: session.email,
+          photoURL: session.photoURL,
         }
       : null,
   })

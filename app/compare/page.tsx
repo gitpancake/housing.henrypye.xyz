@@ -46,6 +46,8 @@ export default async function ComparePage() {
         displayName: user.displayName,
         username: user.username,
         isAdmin: user.isAdmin,
+        email: session.email,
+        photoURL: session.photoURL,
       }}
     >
       <CompareView listings={listings} users={allUsers} />

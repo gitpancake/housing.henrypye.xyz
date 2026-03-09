@@ -2,13 +2,20 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
+import { getFirebaseAuth } from "@/lib/firebase";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
 export default function LoginPage() {
     const router = useRouter();
-    const [username, setUsername] = useState("");
+    const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const [resetSent, setResetSent] = useState(false);
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -16,13 +23,13 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
-            const res = await fetch("/api/auth/login", {
+            const cred = await signInWithEmailAndPassword(getFirebaseAuth(), email, password);
+            const idToken = await cred.user.getIdToken();
+
+            const res = await fetch("/api/auth", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    username: username.toLowerCase(),
-                    password,
-                }),
+                body: JSON.stringify({ idToken }),
             });
 
             const data = await res.json();
@@ -33,77 +40,95 @@ export default function LoginPage() {
                 return;
             }
 
-            if (!data.user.onboardingComplete) {
+            if (!data.onboardingComplete) {
                 router.push("/onboarding");
             } else {
                 router.push("/");
             }
+            router.refresh();
         } catch {
-            setError("Something went wrong. Please try again.");
+            setError("Invalid credentials");
+            setPassword("");
         } finally {
             setLoading(false);
         }
     }
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4">
-            <div className="w-full max-w-sm rounded-xl border border-zinc-200 bg-white p-8 shadow-sm">
-                <div className="text-center mb-6">
-                    <h1 className="font-mono text-sm font-bold tracking-tight">
-                        nest finder.
-                    </h1>
-                    <p className="text-xs text-zinc-400 mt-1">
-                        Sign in to your apartment search
-                    </p>
-                </div>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label
-                            htmlFor="username"
-                            className="block text-xs font-medium text-zinc-500 mb-1.5"
-                        >
-                            Username
-                        </label>
-                        <input
-                            id="username"
-                            type="text"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            placeholder="Enter your username"
-                            autoComplete="username"
-                            required
-                            className="w-full rounded-lg border border-zinc-200 px-3 py-2.5 text-sm outline-none focus:border-zinc-400 transition-colors"
-                        />
-                    </div>
-                    <div>
-                        <label
-                            htmlFor="password"
-                            className="block text-xs font-medium text-zinc-500 mb-1.5"
-                        >
-                            Password
-                        </label>
-                        <input
-                            id="password"
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="Enter your password"
-                            autoComplete="current-password"
-                            required
-                            className="w-full rounded-lg border border-zinc-200 px-3 py-2.5 text-sm outline-none focus:border-zinc-400 transition-colors"
-                        />
-                    </div>
-                    {error && (
-                        <p className="text-xs text-red-500">{error}</p>
-                    )}
-                    <button
-                        type="submit"
-                        className="w-full rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-zinc-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                        disabled={loading || !username || !password}
-                    >
-                        {loading ? "Signing in..." : "Sign in"}
-                    </button>
-                </form>
+        <div className="fixed inset-0 flex items-center justify-center bg-background">
+            <div className="w-full max-w-sm">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="font-mono text-sm font-bold tracking-tight">
+                            nest finder.
+                        </CardTitle>
+                        <CardDescription>
+                            Sign in to your apartment search
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="email">Email</Label>
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    autoFocus
+                                    autoComplete="email"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="password">Password</Label>
+                                <Input
+                                    id="password"
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    autoComplete="current-password"
+                                />
+                            </div>
+
+                            {error && (
+                                <p className="text-xs text-destructive">{error}</p>
+                            )}
+
+                            {resetSent && (
+                                <p className="text-xs text-positive">Password reset email sent</p>
+                            )}
+
+                            <Button
+                                type="submit"
+                                disabled={loading || !email || !password}
+                                className="w-full"
+                            >
+                                {loading ? "Signing in..." : "Sign in"}
+                            </Button>
+
+                            <button
+                                type="button"
+                                className="w-full text-xs text-muted-foreground hover:text-foreground transition-colors"
+                                onClick={async () => {
+                                    if (!email) {
+                                        setError("Enter your email first");
+                                        return;
+                                    }
+                                    setError("");
+                                    setResetSent(false);
+                                    try {
+                                        await sendPasswordResetEmail(getFirebaseAuth(), email);
+                                        setResetSent(true);
+                                    } catch {
+                                        setError("Failed to send reset email");
+                                    }
+                                }}
+                            >
+                                Forgot password?
+                            </button>
+                        </form>
+                    </CardContent>
+                </Card>
             </div>
         </div>
     );
