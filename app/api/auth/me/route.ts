@@ -31,6 +31,9 @@ export async function GET() {
           onboardingComplete: user.preferences?.onboardingComplete ?? false,
           email: session.email,
           photoURL: session.photoURL,
+          sharedUserId: session.sharedUserId,
+          activeTeamId: session.activeTeamId,
+          teamRole: session.teamRole,
         }
       : null,
   })

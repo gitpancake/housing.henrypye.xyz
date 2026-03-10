@@ -23,6 +23,9 @@ export function PageWrapper({ children }: { children: React.ReactNode }) {
       isAdmin: user.isAdmin,
       email: user.email ?? "",
       photoURL: user.photoURL ?? null,
+      sharedUserId: user.sharedUserId,
+      activeTeamId: user.activeTeamId,
+      teamRole: user.teamRole,
     }}>
       {children}
     </AppShell>

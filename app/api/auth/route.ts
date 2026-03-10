@@ -32,6 +32,9 @@ export async function POST(req: Request) {
     }
 
     await setSession(idToken);
+
+    const session = await getSession();
+
     return Response.json({
       ok: true,
       uid: decoded.uid,
@@ -39,6 +42,9 @@ export async function POST(req: Request) {
       displayName: firebaseUser.displayName ?? null,
       photoURL: firebaseUser.photoURL ?? null,
       onboardingComplete: user.preferences?.onboardingComplete ?? false,
+      sharedUserId: session?.sharedUserId,
+      activeTeamId: session?.activeTeamId,
+      teamRole: session?.teamRole,
     });
   } catch {
     return Response.json({ error: "Invalid token" }, { status: 401 });
@@ -56,6 +62,9 @@ export async function GET() {
     email: session.email,
     displayName: session.displayName,
     photoURL: session.photoURL,
+    sharedUserId: session.sharedUserId,
+    activeTeamId: session.activeTeamId,
+    teamRole: session.teamRole,
   });
 }
 

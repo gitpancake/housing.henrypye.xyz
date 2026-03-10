@@ -11,6 +11,9 @@ interface User {
   onboardingComplete: boolean
   email: string
   photoURL: string | null
+  sharedUserId: string
+  activeTeamId: string
+  teamRole: "owner" | "collaborator" | "viewer"
 }
 
 export function useUser() {

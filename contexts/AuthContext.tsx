@@ -11,11 +11,16 @@ import { signOut } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 
+export type TeamRole = "owner" | "collaborator" | "viewer";
+
 export interface AuthUser {
   uid: string;
   email: string;
   displayName: string | null;
   photoURL: string | null;
+  sharedUserId: string;
+  activeTeamId: string;
+  teamRole: TeamRole;
 }
 
 interface AuthContextValue {
@@ -45,6 +50,9 @@ export function AuthProvider({
         email: data.email,
         displayName: data.displayName,
         photoURL: data.photoURL,
+        sharedUserId: data.sharedUserId,
+        activeTeamId: data.activeTeamId,
+        teamRole: data.teamRole,
       });
     }
     router.refresh();

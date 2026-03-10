@@ -48,6 +48,9 @@ export default async function ComparePage() {
         isAdmin: user.isAdmin,
         email: session.email,
         photoURL: session.photoURL,
+        sharedUserId: session.sharedUserId,
+        activeTeamId: session.activeTeamId,
+        teamRole: session.teamRole,
       }}
     >
       <CompareView listings={listings} users={allUsers} />
